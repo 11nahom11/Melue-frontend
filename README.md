@@ -11,7 +11,6 @@ breakdown and known gaps.
 ```bash
 npm install
 npx expo install   # aligns dependency versions to your installed Expo SDK
-npx expo install react-native-web react-dom    # if you want to see the web version option 
 npx expo start
 ```
 
