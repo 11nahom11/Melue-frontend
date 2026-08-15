@@ -34,7 +34,7 @@ import {
   reassignStudentsInStore,
   type ScheduleAppointment as Appointment,
   type WeekData,
-} from '../../api/scheduleStore';
+} from '../../stores/scheduleStore';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 

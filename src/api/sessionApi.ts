@@ -18,7 +18,7 @@ import {
   resolveTherapistName,
   setAppointmentStatus,
   updateAppointmentById,
-} from './scheduleStore';
+} from '../stores/scheduleStore';
 
 const BASE_URL = 'https://REPLACE_WITH_REAL_API_HOST/api/v1';
 

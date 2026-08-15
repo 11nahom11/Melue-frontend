@@ -25,7 +25,7 @@ import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { getSessionSummary, submitSessionSummary, saveSessionDraft } from '../../api/sessionApi';
 import ExportPreviewModal from '../../components/ExportPreviewModal';
-import { resetSessionTimer } from '../session/sessionTimerStore';
+import { resetSessionTimer } from '../../stores/sessionTimerStore';
 import type { SessionStackParamList, SessionSummary, SessionSummaryStudent, Goal, Trial } from '../../types';
 
 type Props = NativeStackScreenProps<SessionStackParamList, 'SessionSummary'>;

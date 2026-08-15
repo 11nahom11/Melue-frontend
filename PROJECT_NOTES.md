@@ -4,7 +4,8 @@ Frontend-only (no backend team — every `src/api/*.ts` file is an assumed
 contract with a `DEMO_*` fallback, not a real integration). All 7 roles
 from the spec docs are built: Teacher, Therapy Coordinator, Program
 Director, Director, Institutional Admin, System Admin, Parent. The screen
-specifications live in `frontend description/`.
+specifications live in `frontend description/`; the full work record and
+architecture guide is `PROJECT_DOCUMENTATION.md`.
 
 ## How to log in
 
@@ -76,7 +77,7 @@ Notifications.
 ## Latest work (most recent pass)
 
 - **Session timer no longer resets** — the Session Data Collection timer now
-  lives in a module-level wall-clock store (`src/screens/session/sessionTimerStore.ts`)
+  lives in a module-level wall-clock store (`src/stores/sessionTimerStore.ts`)
   computed from `Date.now()`, so switching tabs or backgrounds never restarts
   or drifts it. It resets only when a session is actually submitted.
 - **SCR-TC-002** Live Session Monitoring now has a working Station filter
@@ -97,7 +98,7 @@ Notifications.
   Teacher scheduling calendar and the Coordinator Operational Management screen
   each kept their own private demo copy of the schedule, so an appointment made
   in one role was invisible to the other. A shared in-memory store
-  (`src/api/scheduleStore.ts`) is now the one source of truth for both screens:
+  (`src/stores/scheduleStore.ts`) is now the one source of truth for both screens:
   create / edit / cancel / mark-status / reassign / unavailability all write to
   it, and each screen re-reads it on load and live-subscribes to changes.
 

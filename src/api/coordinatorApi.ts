@@ -4,7 +4,7 @@
 
 import client from './sessionApi';
 import type { QueryParams, Payload } from '../types';
-import { getWeekData } from './scheduleStore';
+import { getWeekData } from '../stores/scheduleStore';
 
 // SCR-TC-001: Dashboard
 export const getCoordinatorDashboard = () => client.get('/coordinator/dashboard');

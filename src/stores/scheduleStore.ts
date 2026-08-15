@@ -1,4 +1,4 @@
-// api/scheduleStore.ts
+// stores/scheduleStore.ts
 //
 // Shared in-memory source of truth for the staff schedule (MR-38 Staff
 // Scheduling Calendar / MR-39 Appointments / MR-40 Attendance, SCR-TC-005).

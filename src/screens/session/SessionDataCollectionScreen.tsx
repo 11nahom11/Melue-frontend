@@ -34,7 +34,7 @@ import {
   pauseSessionTimer,
   remainingSeconds,
   isTimerRunning,
-} from './sessionTimerStore';
+} from '../../stores/sessionTimerStore';
 
 type Props = NativeStackScreenProps<SessionStackParamList, 'SessionDataCollection'>;
 

@@ -35,7 +35,7 @@ import {
   subscribe,
   getWeekData,
   type ScheduleAppointment as Appointment,
-} from '../../api/scheduleStore';
+} from '../../stores/scheduleStore';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 

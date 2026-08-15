@@ -9,7 +9,9 @@ Institutional Admin, System Admin, Parent).
 The detailed screen-by-screen specifications live in the
 [`frontend description/`](./frontend%20description) folder — each screen ID
 in the code (e.g. `SCR-TEA-001`) maps to a row in those documents.
-`PROJECT_NOTES.md` holds the build breakdown, demo logins and known gaps.
+[`PROJECT_DOCUMENTATION.md`](./PROJECT_DOCUMENTATION.md) is the full work
+record and architecture guide; `PROJECT_NOTES.md` holds build notes, demo
+logins and known gaps.
 
 ## Run it
 
@@ -88,6 +90,9 @@ melue-app/
 │   │   ├── systemadmin/     # System Admin (4 screens)
 │   │   ├── parent/          # Parent (6 screens)
 │   │   └── notifications/   # Shared notification lists
+│   ├── stores/              # Shared module-level stores
+│   │   ├── sessionTimerStore.ts  # wall-clock session timer
+│   │   └── scheduleStore.ts      # Teacher/Coordinator shared schedule
 │   └── theme/               # colors.ts, typography.ts
 ├── app.json
 ├── babel.config.js
