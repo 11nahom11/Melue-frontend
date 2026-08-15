@@ -93,17 +93,13 @@ Notifications.
   quick action.
 - Verified end-to-end: full `tsc --noEmit` typecheck passes, and a production
   bundle (`npx expo export`) compiles clean.
-
-## Known unresolved issue: MR-38/39/40 role mismatch
-
-The real spec for staff scheduling (SCR-TC-005) belongs to the Therapy
-Coordinator role. The original ticket assignment put MR-38 (Staff
-Scheduling Calendar), MR-39 (Appointments), MR-40 (Attendance) under
-"Teacher — Daily Operations." Both now exist: a Teacher-facing version
-(simpler, single-teacher view) and the Coordinator's Operational
-Management screen (full cross-teacher view with performance metrics).
-They currently work independently and don't sync with each other — a
-real backend would need one source of truth.
+- **MR-38/39/40 scheduling is now a single source of truth** — previously the
+  Teacher scheduling calendar and the Coordinator Operational Management screen
+  each kept their own private demo copy of the schedule, so an appointment made
+  in one role was invisible to the other. A shared in-memory store
+  (`src/api/scheduleStore.ts`) is now the one source of truth for both screens:
+  create / edit / cancel / mark-status / reassign / unavailability all write to
+  it, and each screen re-reads it on load and live-subscribes to changes.
 
 ## Simplifications made against spec (review before shipping)
 

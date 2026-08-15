@@ -31,22 +31,13 @@ import {
   markAppointmentStatus,
   markTeacherUnavailable,
 } from '../../api/sessionApi';
+import {
+  subscribe,
+  getWeekData,
+  type ScheduleAppointment as Appointment,
+} from '../../api/scheduleStore';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-
-interface Appointment {
-  id: string;
-  status: string;
-  therapistId: string;
-  therapistName: string;
-  roomId: string;
-  roomName: string;
-  studentIds: string[];
-  studentNames: string[];
-  startTime: string;
-  endTime: string;
-  date?: string;
-}
 
 interface Option {
   id: string;
@@ -91,13 +82,15 @@ export default function SchedulingCalendarScreen({ navigation }: Props) {
       const { data } = await getStaffCalendar({});
       setWeekData(data);
     } catch (err) {
-      setWeekData(DEMO_WEEK);
+      setWeekData(getWeekData());
     }
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => subscribe(load), [load]);
 
   const dayAppointments = (weekData?.[selectedDayIndex] || []).filter(
     (a) => therapistFilter === 'all' || a.therapistId === therapistFilter
@@ -168,30 +161,30 @@ export default function SchedulingCalendarScreen({ navigation }: Props) {
   const handleCancelAppointment = async (id: string) => {
     try {
       await cancelAppointment(id, {});
+      await load();
     } catch (err) {
-      // demo fallback below still applies
+      setWeekData((prev) => ({
+        ...(prev || {}),
+        [selectedDayIndex]: (prev?.[selectedDayIndex] || []).map((a) =>
+          a.id === id ? { ...a, status: 'cancelled' } : a
+        ),
+      }));
     }
-    setWeekData((prev) => ({
-      ...(prev || {}),
-      [selectedDayIndex]: (prev?.[selectedDayIndex] || []).map((a) =>
-        a.id === id ? { ...a, status: 'cancelled' } : a
-      ),
-    }));
     setFormVisible(false);
   };
 
   const handleMarkStatus = async (id: string, status: string) => {
     try {
       await markAppointmentStatus(id, status);
+      await load();
     } catch (err) {
-      // demo fallback below still applies
+      setWeekData((prev) => ({
+        ...(prev || {}),
+        [selectedDayIndex]: (prev?.[selectedDayIndex] || []).map((a) =>
+          a.id === id ? { ...a, status } : a
+        ),
+      }));
     }
-    setWeekData((prev) => ({
-      ...(prev || {}),
-      [selectedDayIndex]: (prev?.[selectedDayIndex] || []).map((a) =>
-        a.id === id ? { ...a, status } : a
-      ),
-    }));
     setFormVisible(false);
   };
 
@@ -280,7 +273,7 @@ export default function SchedulingCalendarScreen({ navigation }: Props) {
       <AppointmentFormModal
         visible={formVisible}
         appointment={editingAppt}
-        defaultDate={`2026-08-${11 + selectedDayIndex}`}
+        defaultDate={`2026-08-${10 + selectedDayIndex}`}
         therapistOptions={THERAPIST_OPTIONS}
         studentOptions={STUDENT_OPTIONS}
         roomOptions={ROOM_OPTIONS}
@@ -293,7 +286,7 @@ export default function SchedulingCalendarScreen({ navigation }: Props) {
       <MarkUnavailableModal
         visible={unavailableVisible}
         therapistOptions={THERAPIST_OPTIONS}
-        defaultDate={`2026-08-${11 + selectedDayIndex}`}
+        defaultDate={`2026-08-${10 + selectedDayIndex}`}
         onClose={() => setUnavailableVisible(false)}
         onSubmit={handleUnavailableSubmit}
       />
@@ -316,31 +309,6 @@ const ROOM_OPTIONS: Option[] = [
   { id: 'room-2', name: 'Room 2' },
   { id: 'room-3', name: 'Room 3' },
 ];
-
-const DEMO_WEEK: Record<number, Appointment[]> = {
-  0: [
-    {
-      id: '1', status: 'confirmed', therapistId: 't-a', therapistName: 'Teacher A',
-      roomId: 'room-2', roomName: 'Room 2', studentIds: ['student-a', 'student-b'],
-      studentNames: ['Student A', 'Student B'], startTime: '9:00 AM', endTime: '10:30 AM',
-    },
-    {
-      id: '2', status: 'scheduled', therapistId: 't-b', therapistName: 'Teacher B',
-      roomId: 'room-3', roomName: 'Room 3', studentIds: ['student-c'],
-      studentNames: ['Student C'], startTime: '11:00 AM', endTime: '12:00 PM',
-    },
-  ],
-  1: [],
-  2: [
-    {
-      id: '3', status: 'scheduled', therapistId: 't-a', therapistName: 'Teacher A',
-      roomId: 'room-2', roomName: 'Room 2', studentIds: ['student-a', 'student-b'],
-      studentNames: ['Student A', 'Student B'], startTime: '9:00 AM', endTime: '10:30 AM',
-    },
-  ],
-  3: [],
-  4: [],
-};
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },

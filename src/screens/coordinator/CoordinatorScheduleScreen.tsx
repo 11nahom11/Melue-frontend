@@ -27,24 +27,16 @@ import {
   cancelAppointment,
   markAppointmentStatus,
   markTeacherUnavailable,
-  reassignStudents,
 } from '../../api/sessionApi';
+import {
+  subscribe,
+  getWeekData,
+  reassignStudentsInStore,
+  type ScheduleAppointment as Appointment,
+  type WeekData,
+} from '../../api/scheduleStore';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-
-interface Appointment {
-  id: string;
-  status: string;
-  therapistId: string;
-  therapistName: string;
-  roomId: string;
-  roomName: string;
-  studentIds: string[];
-  studentNames: string[];
-  startTime: string;
-  endTime: string;
-  date?: string;
-}
 
 interface Option {
   id: string;
@@ -59,8 +51,6 @@ interface Metric {
   independencePercent: number;
   incidents: number;
 }
-
-type WeekData = Record<number, Appointment[]>;
 
 const THERAPIST_OPTIONS: Option[] = [
   { id: 't-a', name: 'Teacher A' },
@@ -96,7 +86,7 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
       const { data } = await getOperationalSchedule({});
       setWeekData(data);
     } catch (err) {
-      setWeekData(DEMO_WEEK);
+      setWeekData(getWeekData());
     }
     try {
       const { data } = await getTeacherPerformanceMetrics({});
@@ -109,6 +99,8 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => subscribe(load), [load]);
 
   const dayAppointments = (weekData?.[selectedDay] || []).filter(
     (a) => teacherFilter === 'all' || a.therapistId === teacherFilter
@@ -144,20 +136,28 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
   };
 
   const handleCancelAppointment = async (id: string) => {
-    try { await cancelAppointment(id, {}); } catch (err) {}
-    setWeekData((prev) => ({
-      ...(prev || {}),
-      [selectedDay]: (prev?.[selectedDay] || []).map((a) => (a.id === id ? { ...a, status: 'cancelled' } : a)),
-    }) as WeekData);
+    try {
+      await cancelAppointment(id, {});
+      await load();
+    } catch (err) {
+      setWeekData((prev) => ({
+        ...(prev || {}),
+        [selectedDay]: (prev?.[selectedDay] || []).map((a) => (a.id === id ? { ...a, status: 'cancelled' } : a)),
+      }) as WeekData);
+    }
     setFormVisible(false);
   };
 
   const handleMarkStatus = async (id: string, status: string) => {
-    try { await markAppointmentStatus(id, status); } catch (err) {}
-    setWeekData((prev) => ({
-      ...(prev || {}),
-      [selectedDay]: (prev?.[selectedDay] || []).map((a) => (a.id === id ? { ...a, status } : a)),
-    }) as WeekData);
+    try {
+      await markAppointmentStatus(id, status);
+      await load();
+    } catch (err) {
+      setWeekData((prev) => ({
+        ...(prev || {}),
+        [selectedDay]: (prev?.[selectedDay] || []).map((a) => (a.id === id ? { ...a, status } : a)),
+      }) as WeekData);
+    }
     setFormVisible(false);
   };
 
@@ -180,47 +180,8 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
   };
 
   const handleReassignSubmit = async (payload: { fromTherapistId: string; toTherapistId: string; studentIds: string[] }) => {
-    try {
-      await reassignStudents(payload);
-    } catch (err) {
-      // Demo/offline fallback below still applies.
-    }
-    setWeekData((prev) => {
-      const next = { ...(prev || {}) } as WeekData;
-      const list = [...(next[selectedDay] || [])];
-      const moved = new Set(payload.studentIds);
-      const withoutMoved = list.map((a) => {
-        if (a.therapistId !== payload.fromTherapistId) return a;
-        const keptIds = (a.studentIds || []).filter((id) => !moved.has(id));
-        const keptNames = (a.studentNames || []).filter((_, i) => !moved.has((a.studentIds || [])[i]));
-        return { ...a, studentIds: keptIds, studentNames: keptNames };
-      });
-      const targetIdx = withoutMoved.findIndex((a) => a.therapistId === payload.toTherapistId);
-      if (targetIdx >= 0) {
-        const target = withoutMoved[targetIdx];
-        const nextAppt = {
-          ...target,
-          studentIds: [...(target.studentIds || []), ...payload.studentIds],
-          studentNames: [...(target.studentNames || []), ...payload.studentIds],
-        };
-        withoutMoved[targetIdx] = nextAppt;
-      } else {
-        withoutMoved.push({
-          id: `local-reassign-${Date.now()}`,
-          status: 'scheduled',
-          therapistId: payload.toTherapistId,
-          therapistName: THERAPIST_OPTIONS.find((t) => t.id === payload.toTherapistId)?.name || payload.toTherapistId,
-          roomId: '',
-          roomName: 'TBD',
-          studentIds: payload.studentIds,
-          studentNames: payload.studentIds,
-          startTime: '9:00 AM',
-          endTime: '10:30 AM',
-        });
-      }
-      next[selectedDay] = withoutMoved;
-      return next;
-    });
+    reassignStudentsInStore(selectedDay, payload.fromTherapistId, payload.toTherapistId, payload.studentIds);
+    setWeekData(getWeekData());
     setReassignVisible(false);
     const targetName = THERAPIST_OPTIONS.find((t) => t.id === payload.toTherapistId)?.name ?? payload.toTherapistId;
     Alert.alert('Students Reassigned', `Moved ${payload.studentIds.length} student(s) to ${targetName}.`, [{ text: 'OK' }]);
@@ -326,7 +287,7 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
       <AppointmentFormModal
         visible={formVisible}
         appointment={editingAppt}
-        defaultDate={`2026-08-${11 + selectedDay}`}
+        defaultDate={`2026-08-${10 + selectedDay}`}
         therapistOptions={THERAPIST_OPTIONS}
         studentOptions={STUDENT_OPTIONS}
         roomOptions={ROOM_OPTIONS}
@@ -347,7 +308,7 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
       <MarkUnavailableModal
         visible={unavailableVisible}
         therapistOptions={THERAPIST_OPTIONS}
-        defaultDate={`2026-08-${11 + selectedDay}`}
+        defaultDate={`2026-08-${10 + selectedDay}`}
         onClose={() => setUnavailableVisible(false)}
         onSubmit={handleUnavailableSubmit}
       />
@@ -377,12 +338,6 @@ function navRouteForTab(tab: string): keyof CoordinatorStackParamList {
   } as Record<string, keyof CoordinatorStackParamList>)[tab];
 }
 
-const DEMO_WEEK: WeekData = {
-  0: [
-    { id: '1', status: 'confirmed', therapistId: 't-a', therapistName: 'Teacher A', roomId: 'room-2', roomName: 'Room 2', studentIds: ['student-a', 'student-b'], studentNames: ['Student A', 'Student B'], startTime: '9:00 AM', endTime: '10:30 AM' },
-  ],
-  1: [], 2: [], 3: [], 4: [],
-};
 const DEMO_METRICS: Metric[] = [
   { teacherId: 't-a', teacherName: 'Teacher A', sessions: 6, trials: 124, independencePercent: 68, incidents: 1 },
   { teacherId: 't-b', teacherName: 'Teacher B', sessions: 4, trials: 80, independencePercent: 55, incidents: 0 },

@@ -8,6 +8,17 @@
 
 import axios from 'axios';
 import type { QueryParams, Payload } from '../types';
+import {
+  addAppointment,
+  addUnavailability,
+  dayIndexFromDate,
+  getWeekData,
+  resolveRoomName,
+  resolveStudentNames,
+  resolveTherapistName,
+  setAppointmentStatus,
+  updateAppointmentById,
+} from './scheduleStore';
 
 const BASE_URL = 'https://REPLACE_WITH_REAL_API_HOST/api/v1';
 
@@ -43,23 +54,55 @@ export const getAppointments = (params: QueryParams) =>
 export const getAppointmentDetail = (appointmentId: string) =>
   client.get(`/appointments/${appointmentId}`);
 
-export const createAppointment = (payload: Payload) =>
+export const createAppointment = (payload: Payload) => {
   // payload: { studentIds[], therapistId, roomId, date, startTime, endTime, stationName }
-  client.post('/appointments', payload);
+  // Demo mode: write straight into the shared schedule store so the Teacher
+  // calendar and the Coordinator Operational Management screen stay in sync.
+  const studentIds = (payload.studentIds as string[]) || [];
+  const created = addAppointment(dayIndexFromDate(payload.date as string), {
+    status: 'scheduled',
+    therapistId: (payload.therapistId as string) || '',
+    therapistName: resolveTherapistName(payload.therapistId as string),
+    roomId: (payload.roomId as string) || '',
+    roomName: resolveRoomName(payload.roomId as string),
+    studentIds,
+    studentNames: resolveStudentNames(studentIds),
+    startTime: (payload.startTime as string) || '',
+    endTime: (payload.endTime as string) || '',
+    date: (payload.date as string) || '',
+  });
+  return Promise.resolve({ data: created });
+};
 
-export const updateAppointment = (appointmentId: string, payload: Payload) =>
-  client.patch(`/appointments/${appointmentId}`, payload);
+export const updateAppointment = (appointmentId: string, payload: Payload) => {
+  updateAppointmentById(appointmentId, {
+    studentIds: (payload.studentIds as string[]) || undefined,
+    studentNames: resolveStudentNames(payload.studentIds as string[]),
+    therapistId: (payload.therapistId as string) || undefined,
+    therapistName: resolveTherapistName(payload.therapistId as string),
+    roomId: (payload.roomId as string) || undefined,
+    roomName: resolveRoomName(payload.roomId as string),
+    startTime: (payload.startTime as string) || undefined,
+    endTime: (payload.endTime as string) || undefined,
+    date: (payload.date as string) || undefined,
+  });
+  return Promise.resolve({ data: { id: appointmentId } });
+};
 
-export const cancelAppointment = (appointmentId: string, payload: Payload) =>
-  client.post(`/appointments/${appointmentId}/cancel`, payload);
+export const cancelAppointment = (appointmentId: string, payload: Payload) => {
+  setAppointmentStatus(appointmentId, 'cancelled');
+  return Promise.resolve({ data: { id: appointmentId } });
+};
 
 export const rescheduleAppointment = (appointmentId: string, payload: Payload) =>
   // payload: { date, startTime, endTime }
   client.post(`/appointments/${appointmentId}/reschedule`, payload);
 
-export const markAppointmentStatus = (appointmentId: string, status: string) =>
+export const markAppointmentStatus = (appointmentId: string, status: string) => {
   // status: 'confirmed' | 'checked_in' | 'in_progress' | 'completed' | 'no_show'
-  client.post(`/appointments/${appointmentId}/status`, { status });
+  setAppointmentStatus(appointmentId, status);
+  return Promise.resolve({ data: { id: appointmentId, status } });
+};
 
 // ---- MR-33: Session Data Collection ----
 export const startSession = (sessionId: string) =>
@@ -142,13 +185,17 @@ export const updateGoalProgress = (studentId: string, goalId: string, payload: P
 // ---- MR-38: Staff Scheduling Calendar ----
 // Per SCR-TC-005 (Operational Management): weekly grid, teacher filter,
 // mark unavailable, reassign students, export schedule.
-export const getStaffCalendar = (params: QueryParams) =>
+export const getStaffCalendar = (params: QueryParams) => {
   // params: { therapistId, weekStart }
-  client.get('/schedule', { params });
+  // Demo mode: serve the shared schedule store directly.
+  return Promise.resolve({ data: getWeekData() });
+};
 
-export const markTeacherUnavailable = (therapistId: string, payload: Payload) =>
+export const markTeacherUnavailable = (therapistId: string, payload: Payload) => {
   // payload: { date, reason }
-  client.post(`/therapists/${therapistId}/unavailability`, payload);
+  addUnavailability(therapistId, (payload.date as string) || '', (payload.reason as string) || '');
+  return Promise.resolve({ data: { therapistId } });
+};
 
 export const reassignStudents = (payload: Payload) =>
   // payload: { fromTherapistId, toTherapistId, studentIds[] }

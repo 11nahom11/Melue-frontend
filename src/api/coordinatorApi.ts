@@ -4,6 +4,7 @@
 
 import client from './sessionApi';
 import type { QueryParams, Payload } from '../types';
+import { getWeekData } from './scheduleStore';
 
 // SCR-TC-001: Dashboard
 export const getCoordinatorDashboard = () => client.get('/coordinator/dashboard');
@@ -30,7 +31,9 @@ export const flagStudent = (studentId: string, payload: Payload) =>
   client.post(`/coordinator/students/${studentId}/flag`, payload);
 
 // SCR-TC-005: Operational Management (also used by MR-38 scheduling)
-export const getOperationalSchedule = (params: QueryParams) => client.get('/coordinator/schedule', { params });
+export const getOperationalSchedule = (params: QueryParams) =>
+  // Demo mode: shared schedule store, same data the Teacher calendar uses.
+  Promise.resolve({ data: getWeekData() });
 export const getTeacherPerformanceMetrics = (params: QueryParams) => client.get('/coordinator/teachers/metrics', { params });
 
 // SCR-TC-006: Parent Communication (Coordinator View)
