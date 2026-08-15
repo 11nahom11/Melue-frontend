@@ -7,10 +7,13 @@ import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import ProgramDirectorNav from './components/ProgramDirectorNav';
 import { PD_ROUTE_BY_TAB } from './components/pdNavRoutes';
+import CoordinatorNav from '../coordinator/components/CoordinatorNav';
+import { useAuth, ROLES } from '../../context/AuthContext';
 import { getIupCandidates, getIupContext, saveIupDraft, finalizeIup, getGoalBank } from '../../api/programDirectorApi';
-import type { ProgramDirectorStackParamList } from '../../types';
+import type { ProgramDirectorStackParamList, CoordinatorStackParamList } from '../../types';
 
 interface GoalBankItem {
   id: string;
@@ -25,6 +28,68 @@ interface IupCandidate {
   id: string;
   name: string;
   status: string;
+}
+
+function IupPreviewModal({ visible, student, context, slots, onClose, onExport }: {
+  visible: boolean;
+  student: IupCandidate | null;
+  context: IupContext | null;
+  slots: Slots;
+  onClose: () => void;
+  onExport: () => void;
+}) {
+  if (!student || !context) return null;
+  const allSlots = [...slots.station1, ...slots.station2];
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={styles.modalSheet}>
+          <View style={styles.previewHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={typography.h2}>IUP Preview — {context.studentName}</Text>
+              <Text style={typography.caption}>Individualized Behavior Intervention Plan (printable format)</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} accessibilityLabel="Close preview">
+              <Feather name="x" size={20} color={colors.navyText} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={{ maxHeight: 400 }}>
+            <Text style={[typography.h3, styles.previewSection]}>Student Information</Text>
+            <Text style={typography.body}>Age {context.age} · DOB {context.dob}</Text>
+            <Text style={typography.body}>{context.program} · Enrolled {context.enrollmentDate}</Text>
+
+            <Text style={[typography.h3, styles.previewSection]}>Assessment Summary</Text>
+            <Text style={typography.bodyBold}>Skills strengths:</Text>
+            <Text style={typography.body}>{context.skillsStrengths}</Text>
+            <Text style={typography.bodyBold}>Behavior functions:</Text>
+            <Text style={typography.body}>{context.behaviorFunctions}</Text>
+            <Text style={typography.bodyBold}>Reinforcement strategies (top 5):</Text>
+            <Text style={typography.body}>{context.topReinforcers.join(', ')}</Text>
+            <Text style={typography.bodyBold}>Sensory engagement:</Text>
+            <Text style={typography.body}>{context.sensorySummary}</Text>
+
+            <Text style={[typography.h3, styles.previewSection]}>Goal Assignment</Text>
+            <Text style={typography.label}>Station 1 (Basic Skills)</Text>
+            {slots.station1.map((g, i) => g ? <Text key={i} style={typography.body}>{i + 1}. {g.name} ({g.domain}) — {g.masteryCriteria}</Text> : null)}
+            <Text style={[typography.label, { marginTop: spacing.sm }]}>Station 2 (Advanced Skills)</Text>
+            {slots.station2.map((g, i) => g ? <Text key={i} style={typography.body}>{i + 1}. {g.name} ({g.domain}) — {g.masteryCriteria}</Text> : null)}
+            <Text style={[typography.caption, { marginTop: spacing.md }]}>
+              {allSlots.filter(Boolean).length} of 4 goal slots assigned · Status: {student.status}
+            </Text>
+          </ScrollView>
+          <View style={styles.modalFooter}>
+            <TouchableOpacity style={styles.footerBtn} onPress={onClose}>
+              <Text style={styles.footerBtnText}>Close</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.exportBtn} onPress={onExport}>
+              <Feather name="share-2" size={14} color={colors.navyText} />
+              <Text style={styles.exportBtnText}>Export</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 interface IupContext {
@@ -114,28 +179,40 @@ function GoalSelectorModal({ visible, goals, onClose, onSelect }: {
   );
 }
 
-export default function IupGenerationScreen({ navigation }: NativeStackScreenProps<ProgramDirectorStackParamList, 'IupGeneration'>) {
+export default function IupGenerationScreen({ navigation, route }: NativeStackScreenProps<ProgramDirectorStackParamList | CoordinatorStackParamList, 'IupGeneration'>) {
+  const { session } = useAuth();
+  const isCoordinator = session?.role === ROLES.COORDINATOR;
   const [candidates, setCandidates] = useState<IupCandidate[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [context, setContext] = useState<IupContext | null>(null);
   const [goalBank, setGoalBank] = useState<GoalBankItem[]>([]);
   const [slots, setSlots] = useState<Slots>({ station1: [null, null], station2: [null, null] });
   const [selectorTarget, setSelectorTarget] = useState<{ station: StationKey; slotIndex: number } | null>(null); // { station, slotIndex }
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    let loadedCandidates: IupCandidate[] = [];
     try {
       const { data } = await getIupCandidates();
-      setCandidates(data);
+      loadedCandidates = data;
     } catch (err) {
-      setCandidates(DEMO_CANDIDATES);
+      loadedCandidates = DEMO_CANDIDATES;
     }
+    setCandidates(loadedCandidates);
     try {
       const { data } = await getGoalBank({});
       setGoalBank(data);
     } catch (err) {
       setGoalBank(DEMO_GOAL_BANK);
     }
-  }, []);
+    const pre = route.params?.studentId;
+    if (pre) {
+      setSelectedStudentId(pre);
+    } else if (loadedCandidates.length > 0) {
+      setSelectedStudentId((prev) => prev ?? loadedCandidates[0].id);
+    }
+  }, [route.params?.studentId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -177,10 +254,43 @@ export default function IupGenerationScreen({ navigation }: NativeStackScreenPro
     try {
       await saveIupDraft(selectedStudentId, { slots });
     } catch (err) {}
-    Alert.alert('Draft saved');
+    setCandidates((prev) => prev.map((c) => (c.id === selectedStudentId ? { ...c, status: 'IUP Draft' } : c)));
+    Alert.alert('Draft saved', 'The IUP draft has been saved and appears in the IUP Library.');
   };
 
-  const handlePreview = () => Alert.alert('Preview IUP', 'Read-only print preview not wired up yet (stub).');
+  const handlePreview = () => setPreviewOpen(true);
+
+  const buildExportText = () => {
+    if (!context) return '';
+    const allSlots = [...slots.station1, ...slots.station2];
+    const lines = [
+      `Melu'e Foundation — Individualized Behavior Intervention Plan (IUP)`,
+      `Student: ${context.studentName}`,
+      `Age: ${context.age} · DOB: ${context.dob} · Program: ${context.program} · Enrolled: ${context.enrollmentDate}`,
+      `Status: ${selectedCandidate?.status ?? 'Draft'}`,
+      '',
+      'ASSESSMENT SUMMARY',
+      `Skills strengths: ${context.skillsStrengths}`,
+      `Behavior functions: ${context.behaviorFunctions}`,
+      `Reinforcement strategies (top 5): ${context.topReinforcers.join(', ')}`,
+      `Sensory engagement: ${context.sensorySummary}`,
+      '',
+      'GOAL ASSIGNMENT',
+      'Station 1 (Basic Skills):',
+      ...slots.station1.map((g, i) => g ? `  ${i + 1}. ${g.name} (${g.domain}) — ${g.masteryCriteria}` : `  ${i + 1}. —`),
+      'Station 2 (Advanced Skills):',
+      ...slots.station2.map((g, i) => g ? `  ${i + 1}. ${g.name} (${g.domain}) — ${g.masteryCriteria}` : `  ${i + 1}. —`),
+      '',
+      `Total goals: ${allSlots.filter(Boolean).length} of 4`,
+      '',
+      `Generated ${new Date().toLocaleDateString()}`,
+    ];
+    return lines.join('\n');
+  };
+
+  const handleExport = () => setExportContent(buildExportText());
+
+  const selectedCandidate = candidates.find((c) => c.id === selectedStudentId) ?? null;
 
   const handleFinalize = async () => {
     if (!selectedStudentId) return;
@@ -200,6 +310,7 @@ export default function IupGenerationScreen({ navigation }: NativeStackScreenPro
             try {
               await finalizeIup(selectedStudentId, { slots });
             } catch (err) {}
+            setCandidates((prev) => prev.map((c) => (c.id === selectedStudentId ? { ...c, status: 'Active Therapy' } : c)));
             Alert.alert('IUP Finalized', 'Student moved to Active Therapy. Goals are now visible in the Teacher session screen.');
           },
         },
@@ -209,7 +320,11 @@ export default function IupGenerationScreen({ navigation }: NativeStackScreenPro
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ProgramDirectorNav activeTab="IUP" onTabPress={(t) => navigation?.navigate?.(PD_ROUTE_BY_TAB[t])} />
+      {isCoordinator ? (
+        <CoordinatorNav activeTab="Schedule" onTabPress={(t) => t !== 'Schedule' && navigation?.navigate?.(coordinatorRouteForTab(t) as never)} />
+      ) : (
+        <ProgramDirectorNav activeTab="IUP" onTabPress={(t) => navigation?.navigate?.(PD_ROUTE_BY_TAB[t] as never)} />
+      )}
 
       <View style={styles.header}>
         <Text style={typography.h1}>IUP Generation & Management</Text>
@@ -285,6 +400,9 @@ export default function IupGenerationScreen({ navigation }: NativeStackScreenPro
           <TouchableOpacity style={styles.footerBtn} onPress={handlePreview}>
             <Text style={styles.footerBtnText}>Preview</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.footerBtn} onPress={handleExport}>
+            <Text style={styles.footerBtnText}>Export</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.finalizeBtn} onPress={handleFinalize}>
             <Text style={styles.finalizeBtnText}>Finalize IUP</Text>
           </TouchableOpacity>
@@ -297,6 +415,23 @@ export default function IupGenerationScreen({ navigation }: NativeStackScreenPro
         onClose={() => setSelectorTarget(null)}
         onSelect={handleSelectGoal}
       />
+
+      <IupPreviewModal
+        visible={previewOpen}
+        student={selectedCandidate}
+        context={context}
+        slots={slots}
+        onClose={() => setPreviewOpen(false)}
+        onExport={handleExport}
+      />
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="IUP Export"
+        filename={`${context?.studentName?.replace(/\s+/g, '_') ?? 'Student'}_IUP_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -305,6 +440,21 @@ const DEMO_CANDIDATES: IupCandidate[] = [
   { id: 'student-c', name: 'Student C', status: 'Ready for IUP' },
   { id: 'student-d', name: 'Student D', status: 'IUP Draft' },
 ];
+
+function coordinatorRouteForTab(tab: string): keyof CoordinatorStackParamList {
+  return ({
+    Dashboard: 'CoordinatorDashboard',
+    'Live Sessions': 'LiveSessionMonitoring',
+    Review: 'SessionSummaryReview',
+    Progress: 'CoordinatorStudentProgress',
+    Schedule: 'CoordinatorSchedule',
+    Parents: 'CoordinatorParentCommunication',
+    Enrollment: 'StudentEnrollment',
+    Workload: 'WorkloadDashboard',
+    Rooms: 'RoomResourceScheduling',
+    Notifications: 'Notifications',
+  } as Record<string, keyof CoordinatorStackParamList>)[tab];
+}
 const DEMO_CONTEXT: IupContext = {
   studentName: 'Student C',
   age: 5,
@@ -341,6 +491,11 @@ const styles = StyleSheet.create({
   finalizeBtnText: { fontWeight: '700', color: colors.navyText },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: spacing.lg },
   modalSheet: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md, maxHeight: '85%' },
+  modalFooter: { flexDirection: 'row', gap: spacing.sm },
+  previewHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  previewSection: { marginTop: spacing.md },
+  exportBtn: { flex: 2, flexDirection: 'row', gap: spacing.xs, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md },
+  exportBtnText: { fontWeight: '700', color: colors.navyText, fontSize: 12 },
   chipRow: { flexDirection: 'row', gap: spacing.xs },
   chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   chipSelected: { backgroundColor: colors.primaryYellow, borderColor: colors.primaryYellow },

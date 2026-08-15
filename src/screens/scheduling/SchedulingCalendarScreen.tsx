@@ -22,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 import { handleTeacherTabPress } from '../../navigation/teacherTabNavigation';
 import type { Payload, SessionStackParamList } from '../../types';
 import AppointmentFormModal from './components/AppointmentFormModal';
+import MarkUnavailableModal from './components/MarkUnavailableModal';
 import {
   getStaffCalendar,
   createAppointment,
@@ -83,6 +84,7 @@ export default function SchedulingCalendarScreen({ navigation }: Props) {
   const [therapistFilter, setTherapistFilter] = useState('all');
   const [formVisible, setFormVisible] = useState(false);
   const [editingAppt, setEditingAppt] = useState<Appointment | null>(null);
+  const [unavailableVisible, setUnavailableVisible] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -193,9 +195,20 @@ export default function SchedulingCalendarScreen({ navigation }: Props) {
     setFormVisible(false);
   };
 
-  const handleMarkUnavailable = () => {
-    Alert.alert('Mark Teacher Unavailable', 'Pick a therapist and reason (form not built out yet - stub).');
-    // TODO: real form; wire to markTeacherUnavailable()
+  const handleMarkUnavailable = () => setUnavailableVisible(true);
+
+  const handleUnavailableSubmit = async (therapistId: string, payload: { date: string; reason: string }) => {
+    try {
+      await markTeacherUnavailable(therapistId, payload);
+    } catch (err) {
+      // Demo/offline fallback below still applies.
+    }
+    setUnavailableVisible(false);
+    Alert.alert(
+      'Marked Unavailable',
+      `${THERAPIST_OPTIONS.find((t) => t.id === therapistId)?.name ?? therapistId} is unavailable on ${payload.date}.`,
+      [{ text: 'OK' }]
+    );
   };
 
   return (
@@ -275,6 +288,14 @@ export default function SchedulingCalendarScreen({ navigation }: Props) {
         onSave={handleSave}
         onCancelAppointment={handleCancelAppointment}
         onMarkStatus={handleMarkStatus}
+      />
+
+      <MarkUnavailableModal
+        visible={unavailableVisible}
+        therapistOptions={THERAPIST_OPTIONS}
+        defaultDate={`2026-08-${11 + selectedDayIndex}`}
+        onClose={() => setUnavailableVisible(false)}
+        onSubmit={handleUnavailableSubmit}
       />
     </SafeAreaView>
   );

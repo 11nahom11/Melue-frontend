@@ -58,6 +58,8 @@ export default function SkillsAssessmentScreen({ navigation, route }: Props) {
     ]);
   };
 
+  const openNeedMap = () => navigation?.navigate?.('AbllsNeedMap', { studentId });
+
   return (
     <SafeAreaView style={styles.safe}>
       <TopNav activeTab="Assessments" onTabPress={(tab) => handleTeacherTabPress(navigation, tab)} onLogout={logout} />
@@ -117,6 +119,13 @@ export default function SkillsAssessmentScreen({ navigation, route }: Props) {
           <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View>
         </View>
 
+        <View style={styles.mapRow}>
+          <TouchableOpacity style={styles.mapBtn} onPress={openNeedMap}>
+            <Feather name="grid" size={14} color={colors.navyText} />
+            <Text style={styles.mapBtnText}>View Need Analysis Map</Text>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
           <Feather name="save" size={16} color={colors.navyText} />
           <Text style={styles.saveBtnText}>Save Assessment</Text>
@@ -145,6 +154,9 @@ const styles = StyleSheet.create({
   notesInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, color: colors.navyText, backgroundColor: colors.bgApp, minHeight: 100, textAlignVertical: 'top' },
   progressTrack: { height: 8, borderRadius: radius.pill, backgroundColor: colors.bgApp, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: colors.primaryYellow, borderRadius: radius.pill },
+  mapRow: { flexDirection: 'row' },
+  mapBtn: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, alignSelf: 'flex-start' },
+  mapBtnText: { fontWeight: '700', color: colors.primaryYellowDark },
   saveBtn: { flexDirection: 'row', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', justifyContent: 'center' },
   saveBtnText: { fontWeight: '700', color: colors.navyText },
 });

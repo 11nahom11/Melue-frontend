@@ -3,10 +3,12 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Modal, Alert } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import StatusPill, { type StatusType } from '../../components/StatusPill';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import ProgramDirectorNav from './components/ProgramDirectorNav';
 import { PD_ROUTE_BY_TAB } from './components/pdNavRoutes';
 import { getAssessmentsForReview, getAssessmentReport, markAssessmentReviewed, addAssessmentNote } from '../../api/programDirectorApi';
@@ -32,11 +34,12 @@ interface AssessmentReport {
   iupStatus: string;
 }
 
-function ReportModal({ visible, report, onClose, onMarkReviewed }: {
+function ReportModal({ visible, report, onClose, onMarkReviewed, onExport }: {
   visible: boolean;
   report: AssessmentReport | null;
   onClose: () => void;
   onMarkReviewed: (studentId: string, notes: string) => void;
+  onExport: (report: AssessmentReport) => void;
 }) {
   const [notes, setNotes] = useState('');
   if (!report) return null;
@@ -63,6 +66,10 @@ function ReportModal({ visible, report, onClose, onMarkReviewed }: {
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
               <Text style={styles.cancelBtnText}>Close</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.exportBtn} onPress={() => onExport(report)}>
+              <Feather name="share-2" size={14} color={colors.navyText} />
+              <Text style={styles.exportBtnText}>Export</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.approveBtn} onPress={() => onMarkReviewed(report.studentId, notes)}>
               <Text style={styles.approveBtnText}>Mark as Reviewed</Text>
             </TouchableOpacity>
@@ -77,6 +84,7 @@ export default function AssessmentReviewScreen({ navigation }: NativeStackScreen
   const [list, setList] = useState<AssessmentListItem[]>([]);
   const [search, setSearch] = useState('');
   const [reportTarget, setReportTarget] = useState<AssessmentReport | null>(null);
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -115,7 +123,28 @@ export default function AssessmentReviewScreen({ navigation }: NativeStackScreen
     ]);
   };
 
-  const handleExportPdf = () => Alert.alert('Generate Assessment PDF', 'PDF export not wired up yet (stub).');
+  const handleExportPdf = (report: AssessmentReport) => {
+    setExportContent(
+      [
+        `Melu'e Foundation — Assessment Summary Report`,
+        `Student: ${report.studentName}`,
+        '',
+        'SKILLS ASSESSMENT (ABLLS)',
+        report.skillsSummary,
+        '',
+        'BEHAVIOR ASSESSMENT (MASS/FAST)',
+        report.behaviorSummary,
+        '',
+        'TOP PREFERENCES',
+        report.preferences.join(', '),
+        '',
+        'IUP STATUS',
+        report.iupStatus,
+        '',
+        `Generated ${new Date().toLocaleDateString()}`,
+      ].join('\n')
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -151,6 +180,15 @@ export default function AssessmentReviewScreen({ navigation }: NativeStackScreen
         report={reportTarget}
         onClose={() => setReportTarget(null)}
         onMarkReviewed={handleMarkReviewed}
+        onExport={handleExportPdf}
+      />
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Assessment Summary Report"
+        filename={`${reportTarget?.studentName.replace(/\s+/g, '_') ?? 'Student'}_AssessmentSummary.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
       />
     </SafeAreaView>
   );
@@ -186,6 +224,8 @@ const styles = StyleSheet.create({
   modalFooter: { flexDirection: 'row', gap: spacing.sm },
   cancelBtn: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
   cancelBtnText: { fontWeight: '600', color: colors.navyText },
+  exportBtn: { flex: 1, flexDirection: 'row', gap: spacing.xs, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.statusPendingBg, borderRadius: radius.md, paddingVertical: spacing.md },
+  exportBtnText: { fontWeight: '700', color: colors.navyText, fontSize: 12 },
   approveBtn: { flex: 2, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
   approveBtnText: { fontWeight: '700', color: colors.navyText },
 });

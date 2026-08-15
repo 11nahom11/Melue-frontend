@@ -2,14 +2,14 @@
 // SCR-PAR-004: Parent Communication
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import ParentNav, { PARENT_ROUTE_BY_TAB } from './components/ParentNav';
-import { getParentConversations, getParentConversationThread, sendParentMessage } from '../../api/parentApi';
+import { getParentConversations, getParentConversationThread, sendParentMessage, setParentConversationResolved } from '../../api/parentApi';
 import type { ParentStackParamList } from '../../types';
 
 const QUICK_TEMPLATES = [
@@ -25,6 +25,7 @@ interface Conversation {
   lastMessagePreview: string;
   unreadCount: number;
   escalated: boolean;
+  status: 'open' | 'resolved';
 }
 
 interface ThreadMessage {
@@ -83,6 +84,18 @@ export default function ParentCommunicationScreen({ navigation }: NativeStackScr
     try { await sendParentMessage(activeId!, { text: newMsg.text, attachments: newMsg.attachments }); } catch (err) {}
   };
 
+  const handleToggleResolved = async () => {
+    if (!activeConversation) return;
+    const next = activeConversation.status !== 'resolved';
+    try { await setParentConversationResolved(activeConversation.id, next); } catch (err) {}
+    setConversations((prev) =>
+      prev.map((c) => (c.id === activeConversation.id ? { ...c, status: next ? 'resolved' : 'open' } : c))
+    );
+    Alert.alert(next ? 'Thread closed' : 'Thread reopened', next
+      ? 'This conversation is now marked as resolved. You can reopen it at any time.'
+      : 'This conversation has been reopened.');
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ParentNav activeTab="Messages" onTabPress={(t) => navigation?.navigate?.(PARENT_ROUTE_BY_TAB[t])} />
@@ -113,8 +126,22 @@ export default function ParentCommunicationScreen({ navigation }: NativeStackScr
           {activeConversation && !showLog ? (
             <>
               <View style={styles.chatHeader}>
-                <Text style={typography.h3}>{activeConversation.teamMemberName}</Text>
-                <Text style={typography.caption}>{activeConversation.teamMemberRole}</Text>
+                <View style={styles.chatHeaderRow}>
+                  <View>
+                    <Text style={typography.h3}>{activeConversation.teamMemberName}</Text>
+                    <Text style={typography.caption}>{activeConversation.teamMemberRole}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.resolveBtn, activeConversation.status === 'resolved' && styles.resolveBtnDone]}
+                    onPress={handleToggleResolved}
+                    accessibilityLabel={activeConversation.status === 'resolved' ? 'Reopen conversation' : 'Mark as resolved'}
+                  >
+                    <Feather name={activeConversation.status === 'resolved' ? 'rotate-ccw' : 'check-circle'} size={13} color={colors.navyText} />
+                    <Text style={styles.resolveBtnText}>
+                      {activeConversation.status === 'resolved' ? 'Reopen' : 'Mark as Resolved'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               <ScrollView style={styles.messagesScroll} contentContainerStyle={styles.messagesContent}>
                 {thread.map((m) => (
@@ -160,10 +187,34 @@ export default function ParentCommunicationScreen({ navigation }: NativeStackScr
                 </TouchableOpacity>
               </View>
             </>
+          ) : showLog && activeConversation ? (
+            <ScrollView contentContainerStyle={styles.logContent}>
+              <Text style={typography.h3}>Communication Log</Text>
+              <Text style={typography.caption}>
+                {activeConversation.teamMemberName} · {activeConversation.teamMemberRole} ·{' '}
+                {activeConversation.status === 'resolved' ? 'Resolved' : 'Open'}
+              </Text>
+              <View style={styles.logList}>
+                {thread.length === 0 && <Text style={[typography.body, { color: colors.mutedText }]}>No messages recorded yet.</Text>}
+                {thread.map((m) => (
+                  <View key={m.id} style={styles.logRow}>
+                    <View style={styles.logRowHeader}>
+                      <Text style={typography.bodyBold}>{m.senderLabel}</Text>
+                      {m.roleTag ? <Text style={styles.logRoleTag}>{m.roleTag}</Text> : null}
+                      <Text style={styles.logTime}>{m.timestamp ?? new Date().toLocaleTimeString()}</Text>
+                    </View>
+                    {m.text ? <Text style={typography.body}>{m.text}</Text> : null}
+                    {m.attachments?.length ? (
+                      <Text style={styles.logAttachments}>Attachments: {m.attachments.map((a) => a.name).join(', ')}</Text>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
           ) : (
             <View style={styles.emptyState}>
               <Feather name="message-circle" size={40} color={colors.mutedText} />
-              <Text style={typography.body}>{showLog ? 'Full message history and audit log' : 'Select a conversation'}</Text>
+              <Text style={typography.body}>{showLog ? 'Select a conversation to view its audit log' : 'Select a conversation'}</Text>
             </View>
           )}
         </View>
@@ -173,8 +224,8 @@ export default function ParentCommunicationScreen({ navigation }: NativeStackScr
 }
 
 const DEMO_CONVERSATIONS: Conversation[] = [
-  { id: '1', teamMemberName: 'Teacher A', teamMemberRole: 'Teacher', lastMessagePreview: 'Great progress today!', unreadCount: 1, escalated: false },
-  { id: '2', teamMemberName: 'Coordinator A', teamMemberRole: 'Coordinator', lastMessagePreview: 'Escalated: scheduling question', unreadCount: 0, escalated: true },
+  { id: '1', teamMemberName: 'Teacher A', teamMemberRole: 'Teacher', lastMessagePreview: 'Great progress today!', unreadCount: 1, escalated: false, status: 'open' },
+  { id: '2', teamMemberName: 'Coordinator A', teamMemberRole: 'Coordinator', lastMessagePreview: 'Escalated: scheduling question', unreadCount: 0, escalated: true, status: 'open' },
 ];
 const DEMO_THREAD: ThreadMessage[] = [
   { id: '1', sender: 'team', senderLabel: 'Teacher A', roleTag: 'Teacher', text: 'Student A had a great session today!', timestamp: '10:15 AM', attachments: [{ id: 'att-1', name: 'session_progress.pdf' }] },
@@ -194,6 +245,17 @@ const styles = StyleSheet.create({
   escalatedTag: { fontSize: 10, fontWeight: '700', color: '#EF4444', marginTop: 2 },
   chatPane: { flex: 1 },
   chatHeader: { padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border },
+  chatHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
+  resolveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  resolveBtnDone: { backgroundColor: colors.statusCompletedBg, borderColor: colors.statusCompletedText },
+  resolveBtnText: { fontSize: 11, fontWeight: '600', color: colors.navyText },
+  logContent: { padding: spacing.lg, gap: spacing.sm },
+  logList: { gap: spacing.md, marginTop: spacing.sm },
+  logRow: { backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
+  logRowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  logRoleTag: { fontSize: 10, fontWeight: '700', color: colors.navyText, backgroundColor: colors.statusPendingBg, borderRadius: radius.sm, paddingHorizontal: spacing.xs, paddingVertical: 1, overflow: 'hidden' },
+  logTime: { marginLeft: 'auto', fontSize: 10, color: colors.mutedText },
+  logAttachments: { fontSize: 11, fontWeight: '600', color: colors.mutedText, fontStyle: 'italic' },
   messagesScroll: { flex: 1 },
   messagesContent: { padding: spacing.lg, gap: spacing.sm },
   messageBubble: { backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, maxWidth: '75%', alignSelf: 'flex-start' },

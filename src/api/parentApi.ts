@@ -20,6 +20,8 @@ export const getRequestedLogs = () => client.get('/parent/observations/requested
 export const getParentConversations = () => client.get('/parent/conversations');
 export const getParentConversationThread = (id: string) => client.get(`/parent/conversations/${id}`);
 export const sendParentMessage = (id: string, payload: Payload) => client.post(`/parent/conversations/${id}/messages`, payload);
+export const setParentConversationResolved = (id: string, resolved: boolean) =>
+  client.post(`/parent/conversations/${id}/status`, { resolved });
 
 // MR-51/52: Announcements & Notifications (Parent view)
 export const getParentNotifications = () => client.get('/parent/notifications');

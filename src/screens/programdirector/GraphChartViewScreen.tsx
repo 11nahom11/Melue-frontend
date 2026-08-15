@@ -2,13 +2,14 @@
 // SCR-PD-008: Graph & Chart View
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import ProgramDirectorNav from './components/ProgramDirectorNav';
 import { PD_ROUTE_BY_TAB } from './components/pdNavRoutes';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getChartData, exportChart } from '../../api/programDirectorApi';
 import type { ProgramDirectorStackParamList } from '../../types';
 
@@ -57,6 +58,7 @@ export default function GraphChartViewScreen({ navigation }: NativeStackScreenPr
   const [studentId, setStudentId] = useState('student-a');
   const [chartType, setChartType] = useState<string>(CHART_TYPES[0]);
   const [data, setData] = useState<ChartData | null>(null);
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -71,7 +73,21 @@ export default function GraphChartViewScreen({ navigation }: NativeStackScreenPr
 
   const handleExport = async () => {
     try { await exportChart({ studentId, chartType }); } catch (err) {}
-    Alert.alert('Export Chart', 'PNG/PDF export not wired up yet (stub).');
+    if (!data) return;
+    const studentName = STUDENT_OPTIONS.find((s) => s.id === studentId)?.name ?? studentId;
+    const lines: string[] = [];
+    lines.push('GRAPH & CHART VIEW EXPORT');
+    lines.push(`Student: ${studentName} · Chart type: ${chartType} · Generated: ${new Date().toLocaleDateString()}`);
+    lines.push('');
+    data.goalCharts.forEach((gc) => {
+      lines.push(`${gc.goalName}`);
+      gc.series.forEach((p) => {
+        lines.push(`  ${p.label}: ${p.value}%`);
+      });
+      lines.push(`  Summary: ${gc.summary}`);
+      lines.push('');
+    });
+    setExportContent(lines.join('\n'));
   };
 
   if (!data) return null;
@@ -113,6 +129,14 @@ export default function GraphChartViewScreen({ navigation }: NativeStackScreenPr
           </View>
         ))}
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Chart Export"
+        filename={`Chart_${studentId}_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }

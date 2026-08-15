@@ -6,7 +6,7 @@ import { colors, radius, spacing } from '../../../theme/colors';
 import { typography } from '../../../theme/typography';
 import { useAuth } from '../../../context/AuthContext';
 
-const TABS = ['Dashboard', 'Assessments', 'IUP', 'Library', 'Caseload', 'Goal Bank', 'Charts', 'Parents'];
+const TABS = ['Dashboard', 'Assessments', 'IUP', 'Library', 'Caseload', 'Goal Bank', 'Approvals', 'Enrollment', 'Charts', 'Parents'];
 
 interface ProgramDirectorNavProps {
   activeTab: string;

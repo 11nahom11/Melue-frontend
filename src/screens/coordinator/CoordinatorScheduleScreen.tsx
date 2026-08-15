@@ -13,6 +13,9 @@ import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import CoordinatorNav from './components/CoordinatorNav';
 import AppointmentFormModal from '../scheduling/components/AppointmentFormModal';
+import MarkUnavailableModal from '../scheduling/components/MarkUnavailableModal';
+import ReassignStudentsModal from './components/ReassignStudentsModal';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import type { CoordinatorStackParamList, Payload } from '../../types';
 import {
   getOperationalSchedule,
@@ -84,6 +87,9 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
   const [teacherFilter, setTeacherFilter] = useState('all');
   const [formVisible, setFormVisible] = useState(false);
   const [editingAppt, setEditingAppt] = useState<Appointment | null>(null);
+  const [exportContent, setExportContent] = useState<string | null>(null);
+  const [unavailableVisible, setUnavailableVisible] = useState(false);
+  const [reassignVisible, setReassignVisible] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -155,16 +161,87 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
     setFormVisible(false);
   };
 
-  const handleReassign = () => {
-    Alert.alert('Reassign Students', 'Capacity-validated reassignment form not built out yet (stub).');
+  const handleReassign = () => setReassignVisible(true);
+
+  const handleMarkUnavailable = () => setUnavailableVisible(true);
+
+  const handleUnavailableSubmit = async (therapistId: string, payload: { date: string; reason: string }) => {
+    try {
+      await markTeacherUnavailable(therapistId, payload);
+    } catch (err) {
+      // Demo/offline fallback below still applies.
+    }
+    setUnavailableVisible(false);
+    Alert.alert(
+      'Marked Unavailable',
+      `${THERAPIST_OPTIONS.find((t) => t.id === therapistId)?.name ?? therapistId} is unavailable on ${payload.date} (${payload.reason}).`,
+      [{ text: 'OK' }]
+    );
   };
 
-  const handleMarkUnavailable = () => {
-    Alert.alert('Mark Teacher Unavailable', 'Reason + date form not built out yet (stub).');
+  const handleReassignSubmit = async (payload: { fromTherapistId: string; toTherapistId: string; studentIds: string[] }) => {
+    try {
+      await reassignStudents(payload);
+    } catch (err) {
+      // Demo/offline fallback below still applies.
+    }
+    setWeekData((prev) => {
+      const next = { ...(prev || {}) } as WeekData;
+      const list = [...(next[selectedDay] || [])];
+      const moved = new Set(payload.studentIds);
+      const withoutMoved = list.map((a) => {
+        if (a.therapistId !== payload.fromTherapistId) return a;
+        const keptIds = (a.studentIds || []).filter((id) => !moved.has(id));
+        const keptNames = (a.studentNames || []).filter((_, i) => !moved.has((a.studentIds || [])[i]));
+        return { ...a, studentIds: keptIds, studentNames: keptNames };
+      });
+      const targetIdx = withoutMoved.findIndex((a) => a.therapistId === payload.toTherapistId);
+      if (targetIdx >= 0) {
+        const target = withoutMoved[targetIdx];
+        const nextAppt = {
+          ...target,
+          studentIds: [...(target.studentIds || []), ...payload.studentIds],
+          studentNames: [...(target.studentNames || []), ...payload.studentIds],
+        };
+        withoutMoved[targetIdx] = nextAppt;
+      } else {
+        withoutMoved.push({
+          id: `local-reassign-${Date.now()}`,
+          status: 'scheduled',
+          therapistId: payload.toTherapistId,
+          therapistName: THERAPIST_OPTIONS.find((t) => t.id === payload.toTherapistId)?.name || payload.toTherapistId,
+          roomId: '',
+          roomName: 'TBD',
+          studentIds: payload.studentIds,
+          studentNames: payload.studentIds,
+          startTime: '9:00 AM',
+          endTime: '10:30 AM',
+        });
+      }
+      next[selectedDay] = withoutMoved;
+      return next;
+    });
+    setReassignVisible(false);
+    const targetName = THERAPIST_OPTIONS.find((t) => t.id === payload.toTherapistId)?.name ?? payload.toTherapistId;
+    Alert.alert('Students Reassigned', `Moved ${payload.studentIds.length} student(s) to ${targetName}.`, [{ text: 'OK' }]);
   };
 
   const handleExport = () => {
-    Alert.alert('Export Schedule', 'PDF/CSV export not wired up yet (stub).');
+    const lines = [
+      `Melu'e Foundation — Staff Schedule`,
+      `Day: ${DAYS[selectedDay]}`,
+      `Teacher filter: ${teacherFilter === 'all' ? 'All' : THERAPIST_OPTIONS.find((t) => t.id === teacherFilter)?.name}`,
+      '',
+      'APPOINTMENTS',
+      ...dayAppointments.map((a) => `• ${a.startTime} – ${a.endTime} | ${a.therapistName} | ${a.roomName} | ${a.studentNames.join(', ')}`),
+      dayAppointments.length === 0 ? '(none)' : '',
+      '',
+      'PERFORMANCE METRICS',
+      ...metrics.map((m) => `• ${m.teacherName}: ${m.sessions} sessions, ${m.trials} trials, ${m.independencePercent}% independence, ${m.incidents} incidents`),
+      '',
+      `Unassigned students: ${unassignedStudents.length}`,
+    ];
+    setExportContent(lines.join('\n'));
   };
 
   if (!weekData) return null;
@@ -257,6 +334,30 @@ export default function CoordinatorScheduleScreen({ navigation }: Props) {
         onSave={handleSave}
         onCancelAppointment={handleCancelAppointment}
         onMarkStatus={handleMarkStatus}
+      />
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Schedule Export"
+        filename={`StaffSchedule_${DAYS[selectedDay]}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
+
+      <MarkUnavailableModal
+        visible={unavailableVisible}
+        therapistOptions={THERAPIST_OPTIONS}
+        defaultDate={`2026-08-${11 + selectedDay}`}
+        onClose={() => setUnavailableVisible(false)}
+        onSubmit={handleUnavailableSubmit}
+      />
+
+      <ReassignStudentsModal
+        visible={reassignVisible}
+        therapistOptions={THERAPIST_OPTIONS}
+        appointments={weekData?.[selectedDay] ?? []}
+        onClose={() => setReassignVisible(false)}
+        onSubmit={handleReassignSubmit}
       />
     </SafeAreaView>
   );

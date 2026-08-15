@@ -5,12 +5,17 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Modal, Alert } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import DirectorNav, { DIRECTOR_ROUTE_BY_TAB } from './components/DirectorNav';
+import ProgramDirectorNav from '../programdirector/components/ProgramDirectorNav';
+import { PD_ROUTE_BY_TAB } from '../programdirector/components/pdNavRoutes';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
+import { useAuth, ROLES } from '../../context/AuthContext';
 import { getPendingMasteryApprovals, getMasteryApprovalDetail, approveMastery, rejectMastery } from '../../api/directorApi';
-import type { DirectorStackParamList } from '../../types';
+import type { DirectorStackParamList, ProgramDirectorStackParamList } from '../../types';
 
 interface MasteryListItem {
   goalId: string;
@@ -90,10 +95,13 @@ function ApprovalDetailModal({ visible, detail, onClose, onApprove, onReject }: 
   );
 }
 
-export default function GoalMasteryApprovalScreen({ navigation }: NativeStackScreenProps<DirectorStackParamList, 'GoalMasteryApproval'>) {
+export default function GoalMasteryApprovalScreen({ navigation }: NativeStackScreenProps<DirectorStackParamList | ProgramDirectorStackParamList, 'GoalMasteryApproval'>) {
+  const { session } = useAuth();
+  const isProgramDirector = session?.role === ROLES.PROGRAM_DIRECTOR;
   const [list, setList] = useState<MasteryListItem[]>([]);
   const [search, setSearch] = useState('');
   const [detail, setDetail] = useState<MasteryDetail | null>(null);
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -136,13 +144,31 @@ export default function GoalMasteryApprovalScreen({ navigation }: NativeStackScr
     Alert.alert('Rejected', 'Sent back to Teacher A with feedback.');
   };
 
-  const handleExport = () => Alert.alert('Export Approval Record', 'PDF export not wired up yet (stub).');
+  const handleExport = () => {
+    setExportContent(
+      [
+        `Melu'e Foundation — Mastery Approval Record`,
+        `Generated ${new Date().toLocaleString()}`,
+        '',
+        ...list.map((g) => `• ${g.studentName} — ${g.goalName} | A: ${g.teacherA} · B: ${g.teacherB} · C: ${g.teacherC} | Submitted ${g.dateSubmitted}`),
+        list.length === 0 ? '(no pending approvals)' : '',
+      ].join('\n')
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <DirectorNav activeTab="Approvals" onTabPress={(t) => navigation?.navigate?.(DIRECTOR_ROUTE_BY_TAB[t])} />
+      {isProgramDirector ? (
+        <ProgramDirectorNav activeTab="Approvals" onTabPress={(t) => navigation?.navigate?.(PD_ROUTE_BY_TAB[t] as never)} />
+      ) : (
+        <DirectorNav activeTab="Approvals" onTabPress={(t) => navigation?.navigate?.(DIRECTOR_ROUTE_BY_TAB[t] as never)} />
+      )}
       <View style={styles.header}>
         <Text style={typography.h1}>Goal Mastery Approval</Text>
+        <TouchableOpacity style={styles.exportBtn} onPress={handleExport}>
+          <Feather name="share-2" size={14} color={colors.navyText} />
+          <Text style={styles.exportBtnText}>Export Record</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchRow}>
@@ -165,6 +191,14 @@ export default function GoalMasteryApprovalScreen({ navigation }: NativeStackScr
       </ScrollView>
 
       <ApprovalDetailModal visible={!!detail} detail={detail} onClose={() => setDetail(null)} onApprove={handleApprove} onReject={handleReject} />
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Mastery Approval Record"
+        filename={`MasteryApprovalRecord_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -181,7 +215,9 @@ const DEMO_DETAIL: MasteryDetail = {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
-  header: { padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
+  exportBtn: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  exportBtnText: { fontSize: 12, fontWeight: '600', color: colors.navyText },
   searchRow: { padding: spacing.md, backgroundColor: colors.bgCard },
   searchInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, backgroundColor: colors.bgApp },
   content: { padding: spacing.lg, gap: spacing.md },

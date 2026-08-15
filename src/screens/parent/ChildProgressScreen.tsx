@@ -7,6 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import ParentNav, { PARENT_ROUTE_BY_TAB } from './components/ParentNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getChildProgress, getSessionSummaryForParent } from '../../api/parentApi';
 import type { ParentStackParamList } from '../../types';
 
@@ -65,6 +66,7 @@ interface ChildProgressData {
 export default function ChildProgressScreen({ navigation }: NativeStackScreenProps<ParentStackParamList, 'ChildProgress'>) {
   const [data, setData] = useState<ChildProgressData | null>(null);
   const [summaryModal, setSummaryModal] = useState<SessionSummary | null>(null);
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -86,7 +88,31 @@ export default function ChildProgressScreen({ navigation }: NativeStackScreenPro
     }
   };
 
-  const handleExportIup = () => Alert.alert('Export IUP Summary', 'PDF export not wired up yet (stub).');
+  const handleExportIup = () => {
+    if (!data) return;
+    setExportContent(
+      [
+        'INDIVIDUALIZED UPGRADE PLAN (IUP) SUMMARY',
+        `Child: ${data.childName} · Age ${data.age} · ${data.program}`,
+        `Generated: ${new Date().toLocaleDateString()}`,
+        '',
+        'PLAN SUMMARY',
+        data.iupSummary,
+        '',
+        'GOAL PROGRESS',
+        ...data.goals.map((g) => `- ${g.friendlyName}: ${g.percent}% toward the goal`),
+        '',
+        'OVERALL PROGRESS',
+        data.overallSummary,
+        '',
+        'BEHAVIOR TRENDS',
+        data.behaviorSummary,
+        '',
+        'ASSESSMENT RESULTS',
+        data.assessmentSummary,
+      ].join('\n')
+    );
+  };
 
   if (!data) return null;
 
@@ -141,7 +167,7 @@ export default function ChildProgressScreen({ navigation }: NativeStackScreenPro
           <Text style={typography.h3}>Therapy Plan (IUP) Summary</Text>
           <Text style={typography.body}>{data.iupSummary}</Text>
           <TouchableOpacity style={styles.secondaryBtn} onPress={handleExportIup}>
-            <Text style={styles.secondaryBtnText}>Export PDF</Text>
+            <Text style={styles.secondaryBtnText}>Export IUP Summary</Text>
           </TouchableOpacity>
         </View>
 
@@ -152,6 +178,14 @@ export default function ChildProgressScreen({ navigation }: NativeStackScreenPro
       </ScrollView>
 
       <SessionSummaryModal visible={!!summaryModal} summary={summaryModal} onClose={() => setSummaryModal(null)} />
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="IUP Summary"
+        filename={`IupSummary_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }

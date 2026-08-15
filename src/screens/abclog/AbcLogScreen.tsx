@@ -11,6 +11,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import TopNav from '../../components/TopNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { useAuth } from '../../context/AuthContext';
 import { handleTeacherTabPress } from '../../navigation/teacherTabNavigation';
 import { getAbcLog, exportAbcLog } from '../../api/teacherExtrasApi';
@@ -39,6 +40,8 @@ const STUDENT_OPTIONS = [
   { id: 'student-b', name: 'Student B', age: 6 },
 ];
 const COLUMNS = ['Date', 'Time', 'Location', 'Behavior', 'Frequency', 'Intensity', 'Category', 'Antecedent', 'Consequence', 'Teacher'];
+const BEHAVIOR_OPTIONS = ['Aggression', 'Tantrum', 'Elopement', 'Non-compliance', 'Self-injury'];
+const CATEGORY_OPTIONS = ['Physical', 'Verbal', 'Disruptive'];
 
 export default function AbcLogScreen({ navigation }: Props) {
   const { logout } = useAuth();
@@ -48,20 +51,75 @@ export default function AbcLogScreen({ navigation }: Props) {
   const [behaviorFilter, setBehaviorFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [data, setData] = useState<AbcLogData | null>(null);
+  const [exportContent, setExportContent] = useState<string | null>(null);
+
+  const buildData = useCallback((behavior: string, category: string): AbcLogData => {
+    const filtered = DEMO_INCIDENTS.filter(
+      (r) =>
+        (behavior === 'All' || r.behavior === behavior) &&
+        (category === 'All' || r.category === category)
+    );
+    const behaviorCounts: Record<string, number> = {};
+    const antecedentCounts: Record<string, number> = {};
+    filtered.forEach((r) => {
+      const b = r.behavior ?? '';
+      const a = r.antecedent ?? '';
+      behaviorCounts[b] = (behaviorCounts[b] || 0) + 1;
+      antecedentCounts[a] = (antecedentCounts[a] || 0) + 1;
+    });
+    const top = (counts: Record<string, number>) =>
+      Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A';
+    const thisWeek = filtered.filter((r) => (r.date ?? '').startsWith('08/')).length;
+    return {
+      stats: {
+        totalIncidents: filtered.length,
+        mostCommonBehavior: top(behaviorCounts),
+        mostCommonAntecedent: top(antecedentCounts),
+        thisWeek,
+      },
+      incidents: filtered,
+    };
+  }, []);
 
   const load = useCallback(async () => {
     try {
       const { data: res } = await getAbcLog({ studentId, from, to, behavior: behaviorFilter, category: categoryFilter });
       setData(res);
     } catch (err) {
-      setData(DEMO_DATA);
+      setData(buildData(behaviorFilter, categoryFilter));
     }
-  }, [studentId, from, to, behaviorFilter, categoryFilter]);
+  }, [studentId, from, to, behaviorFilter, categoryFilter, buildData]);
 
   useEffect(() => { load(); }, [load]);
 
+  const cycleFilter = (current: string, options: string[]) => {
+    const idx = options.indexOf(current);
+    return options[(idx + 1) % options.length];
+  };
+
   const handleExport = async () => {
-    try { await exportAbcLog({ studentId, from, to }); } catch (err) {}
+    try {
+      await exportAbcLog({ studentId, from, to });
+    } catch (err) {}
+    const rows = data?.incidents ?? [];
+    const header = COLUMNS.join(',');
+    const lines = rows.map((r) => COLUMNS.map((c) => `"${(r[c.toLowerCase()] || '').replace(/"/g, '""')}"`).join(','));
+    const stats = data?.stats;
+    const content = [
+      `Melu'e Foundation — ABC Data Sheet`,
+      `Student: ${currentStudent?.name}`,
+      `Range: ${from} to ${to}`,
+      `Filters: Behavior ${behaviorFilter} · Category ${categoryFilter}`,
+      '',
+      `TOTAL INCIDENTS: ${stats?.totalIncidents ?? 0}`,
+      `MOST COMMON BEHAVIOR: ${stats?.mostCommonBehavior ?? 'N/A'}`,
+      `MOST COMMON ANTECEDENT: ${stats?.mostCommonAntecedent ?? 'N/A'}`,
+      `THIS WEEK: ${stats?.thisWeek ?? 0}`,
+      '',
+      header,
+      ...lines,
+    ].join('\n');
+    setExportContent(content);
   };
 
   const currentStudent = STUDENT_OPTIONS.find((s) => s.id === studentId);
@@ -99,10 +157,16 @@ export default function AbcLogScreen({ navigation }: Props) {
           </View>
         </View>
         <View style={styles.filtersRow}>
-          <TouchableOpacity style={[styles.filterChip, styles.filterChipFlex]}>
+          <TouchableOpacity
+            style={[styles.filterChip, styles.filterChipFlex]}
+            onPress={() => setBehaviorFilter((prev) => cycleFilter(prev, ['All', ...BEHAVIOR_OPTIONS]))}
+          >
             <Text style={typography.body}>Behavior: {behaviorFilter}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.filterChip, styles.filterChipFlex]}>
+          <TouchableOpacity
+            style={[styles.filterChip, styles.filterChipFlex]}
+            onPress={() => setCategoryFilter((prev) => cycleFilter(prev, ['All', ...CATEGORY_OPTIONS]))}
+          >
             <Text style={typography.body}>Category: {categoryFilter}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.exportBtn} onPress={handleExport}>
@@ -156,14 +220,26 @@ export default function AbcLogScreen({ navigation }: Props) {
         </ScrollView>
         <Text style={typography.caption}>Showing {data.incidents.length === 0 ? '0-0' : `1-${data.incidents.length}`} of {data.incidents.length} incidents</Text>
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="ABC Data Sheet Export"
+        filename={`ABC_Data_${currentStudent?.name?.replace(/\s+/g, '_')}_${from}_to_${to}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }
 
-const DEMO_DATA: AbcLogData = {
-  stats: { totalIncidents: 0, mostCommonBehavior: 'N/A', mostCommonAntecedent: 'N/A', thisWeek: 0 },
-  incidents: [],
-};
+const DEMO_INCIDENTS: AbcIncidentRow[] = [
+  { date: '08/01/2026', time: '9:12 AM', location: 'Room 2', behavior: 'Tantrum', frequency: '2 times', intensity: 'High', category: 'Disruptive', antecedent: 'Transitions', consequence: 'Verbal redirection', teacher: 'Teacher A' },
+  { date: '08/01/2026', time: '10:40 AM', location: 'Playground', behavior: 'Aggression', frequency: '1 time', intensity: 'High', category: 'Physical', antecedent: 'Peer proximity', consequence: 'Time-out', teacher: 'Teacher A' },
+  { date: '08/04/2026', time: '9:05 AM', location: 'Room 2', behavior: 'Elopement', frequency: '1 time', intensity: 'Medium', category: 'Physical', antecedent: 'Non-preferred task', consequence: 'Blocking + redirect', teacher: 'Teacher B' },
+  { date: '08/05/2026', time: '1:22 PM', location: 'Room 1', behavior: 'Non-compliance', frequency: '4 times', intensity: 'Low', category: 'Verbal', antecedent: 'Instructions', consequence: 'Prompt hierarchy', teacher: 'Teacher A' },
+  { date: '07/29/2026', time: '11:00 AM', location: 'Room 2', behavior: 'Self-injury', frequency: '3 times', intensity: 'High', category: 'Physical', antecedent: 'Demand removal', consequence: 'Sensory break', teacher: 'Teacher B' },
+  { date: '07/25/2026', time: '8:55 AM', location: 'Cafeteria', behavior: 'Tantrum', frequency: '2 times', intensity: 'Medium', category: 'Disruptive', antecedent: 'Waiting', consequence: 'Attention', teacher: 'Teacher A' },
+];
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },

@@ -114,6 +114,7 @@ export type SessionStackParamList = {
   TeacherDashboard: undefined;
   AssessmentDashboard: undefined;
   SkillsAssessment: { studentId: string };
+  AbllsNeedMap: { studentId: string };
   BehaviorAssessment: { studentId: string };
   PreferenceAssessment: { studentId: string };
   SensoryAssessment: { studentId: string };
@@ -128,6 +129,7 @@ export type SessionStackParamList = {
   SessionSummary: { sessionId: string };
   TeacherParentCommunication: undefined;
   Notifications: undefined;
+  StudentProfile: { studentId: string };
 };
 
 export type CoordinatorStackParamList = {
@@ -142,6 +144,7 @@ export type CoordinatorStackParamList = {
   StudentProfile: { studentId: string };
   WorkloadDashboard: undefined;
   RoomResourceScheduling: undefined;
+  IupGeneration: { studentId?: string } | undefined;
   Notifications: undefined;
 };
 
@@ -158,15 +161,18 @@ export type DirectorStackParamList = {
 export type ProgramDirectorStackParamList = {
   ProgramDirectorDashboard: undefined;
   AssessmentReview: undefined;
-  IupGeneration: undefined;
+  IupGeneration: { studentId?: string } | undefined;
   IupLibrary: undefined;
   StudentCaseload: undefined;
   GoalBankManagement: undefined;
+  GoalMasteryApproval: undefined;
   PdParentCommunication: undefined;
   GraphChartView: undefined;
+  StudentEnrollmentWizard: undefined;
 };
 
 export type InstitutionalAdminStackParamList = {
+  AdminPanelOverview: { panel?: 'clinical' | 'system' } | undefined;
   FormBuilder: undefined;
   TrialLoggingFormat: undefined;
   AbcDropdownLists: undefined;
@@ -180,6 +186,7 @@ export type InstitutionalAdminStackParamList = {
 };
 
 export type SystemAdminStackParamList = {
+  AdminPanelOverview: { panel?: 'clinical' | 'system' } | undefined;
   StaffAccountManagement: undefined;
   RoleManagement: undefined;
   PermissionConfiguration: undefined;

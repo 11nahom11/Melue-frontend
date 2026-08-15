@@ -106,6 +106,24 @@ export default function CoordinatorDashboardScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.card}>
+          <Text style={typography.h3}>Quick Actions</Text>
+          <View style={styles.quickActionsRow}>
+            <TouchableOpacity style={styles.quickAction} onPress={() => navigation?.navigate?.('IupGeneration')}>
+              <Feather name="file-text" size={14} color={colors.navyText} />
+              <Text style={styles.quickActionText}>Generate IUP</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickAction} onPress={() => handleTabPress('Enrollment')}>
+              <Feather name="user-plus" size={14} color={colors.navyText} />
+              <Text style={styles.quickActionText}>Enroll Student</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickAction} onPress={() => handleTabPress('Schedule')}>
+              <Feather name="calendar" size={14} color={colors.navyText} />
+              <Text style={styles.quickActionText}>Open Schedule</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.card}>
           <Text style={typography.h3}>Live Session Status</Text>
           {data.liveSessions.map((s) => (
             <View key={s.id} style={styles.liveSessionRow}>
@@ -173,5 +191,8 @@ const styles = StyleSheet.create({
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   reviewRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs },
   linkText: { color: colors.statusInProgressText, fontWeight: '600', fontSize: 12 },
+  quickActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  quickAction: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  quickActionText: { fontSize: 12, fontWeight: '600', color: colors.navyText },
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
 });

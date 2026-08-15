@@ -7,9 +7,10 @@ import { typography } from '../../../theme/typography';
 import { useAuth } from '../../../context/AuthContext';
 import type { SystemAdminStackParamList } from '../../../types';
 
-const TABS = ['Staff Accounts', 'Roles', 'Permissions', 'Audit Log'];
+const TABS = ['Admin Panel', 'Staff Accounts', 'Roles', 'Permissions', 'Audit Log'];
 
 export const SYS_ROUTE_BY_TAB: Record<string, keyof SystemAdminStackParamList> = {
+  'Admin Panel': 'AdminPanelOverview',
   'Staff Accounts': 'StaffAccountManagement',
   Roles: 'RoleManagement',
   Permissions: 'PermissionConfiguration',

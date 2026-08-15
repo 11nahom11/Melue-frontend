@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getFormConfig, saveFormConfig, resetFormToDefault } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
 
@@ -83,6 +84,7 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
   const [isDefault, setIsDefault] = useState(true);
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -133,7 +135,17 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
     ]);
   };
 
-  const handlePreview = () => Alert.alert('Preview Form', 'Read-only preview not wired up yet (stub).');
+  const handlePreview = () => {
+    const lines: string[] = [];
+    lines.push(`FORM PREVIEW — ${selectedForm}`);
+    lines.push('(read-only render of the configured field order, visibility and required rules)');
+    lines.push('');
+    fields.forEach((f) => {
+      lines.push(`${f.visible ? '' : '[hidden] '}${f.label}${f.required ? ' *' : ''}`);
+      lines.push(`    Type: ${f.type}${f.helpText ? ` · ${f.helpText}` : ''}`);
+    });
+    setPreviewContent(lines.join('\n'));
+  };
 
   const handleSave = async () => {
     if (fields.length === 0) { Alert.alert('At least one field required'); return; }
@@ -231,6 +243,14 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
       </View>
 
       <FieldPropertiesModal visible={!!editingField} field={editingField} onClose={() => setEditingField(null)} onSave={handleSaveField} />
+
+      <ExportPreviewModal
+        visible={!!previewContent}
+        title="Form Preview"
+        filename={`${selectedForm.replace(/\s+/g, '_')}_Preview.txt`}
+        content={previewContent ?? ''}
+        onClose={() => setPreviewContent(null)}
+      />
     </SafeAreaView>
   );
 }

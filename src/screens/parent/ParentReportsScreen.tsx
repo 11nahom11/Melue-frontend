@@ -10,6 +10,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import ParentNav, { PARENT_ROUTE_BY_TAB } from './components/ParentNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getParentDocuments, downloadDocument } from '../../api/parentApi';
 import type { ParentStackParamList } from '../../types';
 
@@ -50,6 +51,7 @@ export default function ParentReportsScreen({ navigation }: Props) {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('All');
+  const [previewDoc, setPreviewDoc] = useState<DocEntry | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -86,7 +88,7 @@ export default function ParentReportsScreen({ navigation }: Props) {
   );
 
   const handleView = (doc: DocEntry) => {
-    Alert.alert(doc.title, `Document opened (${doc.category}, ${doc.date}).\n\nViewing is stubbed — the document renders here once a backend serves file URLs.`);
+    setPreviewDoc(doc);
   };
 
   const handleDownload = async (doc: DocEntry) => {
@@ -159,6 +161,23 @@ export default function ParentReportsScreen({ navigation }: Props) {
           );
         })}
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!previewDoc}
+        title={previewDoc?.title ?? 'Document'}
+        filename={`${(previewDoc?.title ?? 'Document').replace(/\s+/g, '_')}.txt`}
+        content={
+          previewDoc
+            ? [
+                previewDoc.title,
+                `Category: ${previewDoc.category} · Date: ${previewDoc.date}`,
+                '',
+                'This is a client-side preview of the document record. The full document will render here once a backend serves the actual file URL.',
+              ].join('\n')
+            : ''
+        }
+        onClose={() => setPreviewDoc(null)}
+      />
     </SafeAreaView>
   );
 }

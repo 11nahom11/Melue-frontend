@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import DirectorNav, { DIRECTOR_ROUTE_BY_TAB } from './components/DirectorNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getDirectorStudentProgress } from '../../api/directorApi';
 import type { DirectorStackParamList } from '../../types';
 
@@ -49,6 +50,7 @@ export default function DirectorStudentProgressScreen({ navigation }: NativeStac
   const [selectedStudentId, setSelectedStudentId] = useState('student-a');
   const [data, setData] = useState<DirectorStudentData | null>(null);
   const [notes, setNotes] = useState('');
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -61,7 +63,32 @@ export default function DirectorStudentProgressScreen({ navigation }: NativeStac
 
   useEffect(() => { load(); }, [load]);
 
-  const handlePrint = () => Alert.alert('Print Report', 'PDF export not wired up yet (stub).');
+  const handlePrint = () => {
+    if (!data) return;
+    setExportContent(
+      [
+        `Melu'e Foundation — Student Progress Report (Director)`,
+        `Student: ${data.name} · Age ${data.age} · ${data.program}`,
+        '',
+        'ASSESSMENT SUMMARY',
+        `Skills: ${data.assessmentSummary.skills}`,
+        `Behavior: ${data.assessmentSummary.behavior}`,
+        `Preferences: ${data.assessmentSummary.preferences}`,
+        '',
+        'CURRENT GOALS',
+        ...data.goals.map((g) => `• ${g.name}: ${g.percent}% independent`),
+        '',
+        'SESSION HISTORY',
+        ...data.sessionHistory.map((s) => `• ${s.date} — ${s.teacherName}`),
+        '',
+        'BEHAVIOR INCIDENT TRENDS',
+        data.incidentSummary,
+        '',
+        'DIRECTOR NOTES',
+        notes || '(none)',
+      ].join('\n')
+    );
+  };
 
   if (!data) return null;
 
@@ -147,6 +174,14 @@ export default function DirectorStudentProgressScreen({ navigation }: NativeStac
           />
         </View>
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Student Progress Report"
+        filename={`${data.name.replace(/\s+/g, '_')}_ProgressReport.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }

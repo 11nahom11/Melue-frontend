@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import CoordinatorNav from './components/CoordinatorNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getActiveSessions, sendAlertToTeacher, exportSessionLog } from '../../api/coordinatorApi';
 import type { CoordinatorStackParamList } from '../../types';
 
@@ -74,6 +75,7 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
   const [statusFilter, setStatusFilter] = useState('All');
   const [stationFilter, setStationFilter] = useState('All');
   const [alertTarget, setAlertTarget] = useState<LiveSession | null>(null);
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -94,6 +96,8 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
     (s) => (statusFilter === 'All' || s.status === statusFilter) && (stationFilter === 'All' || s.stationName === stationFilter)
   );
 
+  const stationOptions = ['All', ...Array.from(new Set(sessions.map((s) => s.stationName)))];
+
   const handleSendAlert = async (alertType: string, message: string) => {
     if (!alertTarget) return;
     try {
@@ -109,9 +113,21 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
     try {
       await exportSessionLog({ status: statusFilter, station: stationFilter });
     } catch (err) {
-      // stub
+      // fall through to local export
     }
-    Alert.alert('Export started', 'CSV/PDF export not wired up yet (stub).');
+    setExportContent(
+      [
+        `Melu'e Foundation — Live Session Log`,
+        `Status: ${statusFilter} · Station: ${stationFilter}`,
+        `Generated ${new Date().toLocaleString()}`,
+        '',
+        ...filtered.map((s) => [
+          `${s.teacherName} — ${s.status}`,
+          `  ${s.stationName} · ${s.timer} remaining · ${s.trialCount} trials · Students: ${s.studentNames.join(', ')}`,
+        ]).flat(),
+        filtered.length === 0 ? '(no sessions)' : '',
+      ].join('\n')
+    );
   };
 
   return (
@@ -134,6 +150,16 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {STATUS_FILTERS.map((f) => (
             <TouchableOpacity key={f} style={[styles.filterChip, statusFilter === f && styles.filterChipActive]} onPress={() => setStatusFilter(f)}>
+              <Text style={typography.body}>{f}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={[styles.filterRow, styles.filterRowSpaced]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {stationOptions.map((f) => (
+            <TouchableOpacity key={f} style={[styles.filterChip, stationFilter === f && styles.filterChipActive]} onPress={() => setStationFilter(f)}>
               <Text style={typography.body}>{f}</Text>
             </TouchableOpacity>
           ))}
@@ -167,6 +193,14 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
       </ScrollView>
 
       <AlertModal visible={!!alertTarget} session={alertTarget} onClose={() => setAlertTarget(null)} onSend={handleSendAlert} />
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Live Session Log Export"
+        filename={`LiveSessionLog_${statusFilter.replace(/\s+/g, '_')}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -198,6 +232,7 @@ const styles = StyleSheet.create({
   exportBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   exportBtnText: { fontWeight: '600', fontSize: 12, color: colors.navyText },
   filterRow: { padding: spacing.md, backgroundColor: colors.bgCard },
+  filterRowSpaced: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
   filterChip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginRight: spacing.xs },
   filterChipActive: { backgroundColor: colors.primaryYellow, borderColor: colors.primaryYellow },
   content: { padding: spacing.lg, gap: spacing.md },

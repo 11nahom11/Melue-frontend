@@ -23,6 +23,7 @@ interface StudentSessionCardProps {
   onUndo: () => void;
   onActivate: (studentId: string) => void;
   onViewGoalProgress: (studentId: string, goalId: string) => void;
+  onViewProfile: (studentId: string) => void;
 }
 
 export default function StudentSessionCard({
@@ -33,6 +34,7 @@ export default function StudentSessionCard({
   onUndo,
   onActivate,
   onViewGoalProgress,
+  onViewProfile,
 }: StudentSessionCardProps) {
   const [activeGoalIndex, setActiveGoalIndex] = useState(0);
   const activeGoal = student.goals?.[activeGoalIndex];
@@ -59,7 +61,9 @@ export default function StudentSessionCard({
             <Text style={styles.avatarText}>{student.initial}</Text>
           </View>
           <View>
-            <Text style={typography.h3}>{student.name}</Text>
+            <TouchableOpacity onPress={() => onViewProfile?.(student.id)} accessibilityLabel={`View ${student.name} profile`}>
+              <Text style={[typography.h3, styles.studentNameLink]}>{student.name}</Text>
+            </TouchableOpacity>
             <Text style={typography.caption}>{student.program}</Text>
           </View>
         </View>
@@ -285,6 +289,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  studentNameLink: { textDecorationLine: 'underline', color: colors.navyText },
   avatar: {
     width: 40,
     height: 40,

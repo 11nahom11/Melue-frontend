@@ -8,6 +8,8 @@ export const PD_ROUTE_BY_TAB: Record<string, keyof ProgramDirectorStackParamList
   Library: 'IupLibrary',
   Caseload: 'StudentCaseload',
   'Goal Bank': 'GoalBankManagement',
+  Approvals: 'GoalMasteryApproval',
+  Enrollment: 'StudentEnrollmentWizard',
   Charts: 'GraphChartView',
   Parents: 'PdParentCommunication',
 };

@@ -106,6 +106,9 @@ export default function ProgramDirectorDashboardScreen({ navigation }: NativeSta
           <TouchableOpacity style={styles.quickActionCard} onPress={() => goto('Goal Bank')}>
             <Text style={typography.bodyBold}>View Goal Bank</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.quickActionCard} onPress={() => goto('Enrollment')}>
+            <Text style={typography.bodyBold}>Enroll Student</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

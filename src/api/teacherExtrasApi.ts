@@ -41,6 +41,9 @@ export const getSensoryAssessment = (studentId: string) =>
 export const saveSensoryAssessment = (studentId: string, payload: Record<string, unknown>) =>
   client.post(`/teacher/students/${studentId}/assessments/sensory`, payload);
 
+export const getTeacherStudentProfile = (studentId: string) =>
+  client.get(`/teacher/students/${studentId}/profile`);
+
 // MR-52: Notifications (Teacher view)
 export const getTeacherNotifications = () => client.get('/teacher/notifications');
 export const markNotificationRead = (notificationId: string) =>

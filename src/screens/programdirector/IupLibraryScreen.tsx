@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import StatusPill from '../../components/StatusPill';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import ProgramDirectorNav from './components/ProgramDirectorNav';
 import { PD_ROUTE_BY_TAB } from './components/pdNavRoutes';
 import { getIupLibrary, archiveIup } from '../../api/programDirectorApi';
@@ -15,7 +16,9 @@ import type { ProgramDirectorStackParamList } from '../../types';
 
 interface IupRecord {
   id: string;
+  studentId: string;
   studentName: string;
+  program: string;
   finalizedDate: string;
   goalCount: number;
   version: number;
@@ -26,6 +29,7 @@ export default function IupLibraryScreen({ navigation }: NativeStackScreenProps<
   const [list, setList] = useState<IupRecord[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [exportTarget, setExportTarget] = useState<IupRecord | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -52,9 +56,24 @@ export default function IupLibraryScreen({ navigation }: NativeStackScreenProps<
     ]);
   };
 
-  const handleExport = () => Alert.alert('Export IUP', 'PDF export not wired up yet (stub).');
+  const buildExportText = (iup: IupRecord) =>
+    [
+      `Melu'e Foundation — IUP Record`,
+      `Student: ${iup.studentName}`,
+      `Program: ${iup.program}`,
+      `Status: ${iup.status}`,
+      `Finalized: ${iup.finalizedDate}`,
+      `Goal count: ${iup.goalCount}`,
+      `Version: v${iup.version}`,
+      '',
+      `Exported ${new Date().toLocaleDateString()}`,
+    ].join('\n');
 
-  const filtered = list.filter((i) => statusFilter === 'All' || i.status === statusFilter);
+  const filtered = list.filter(
+    (i) =>
+      (statusFilter === 'All' || i.status === statusFilter) &&
+      (!search || i.studentName.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -79,13 +98,18 @@ export default function IupLibraryScreen({ navigation }: NativeStackScreenProps<
           <View key={iup.id} style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={typography.bodyBold}>{iup.studentName}</Text>
-              <Text style={typography.caption}>Finalized {iup.finalizedDate} · {iup.goalCount} goals · v{iup.version}</Text>
+              <Text style={typography.caption}>{iup.program} · Finalized {iup.finalizedDate} · {iup.goalCount} goals · v{iup.version}</Text>
             </View>
             <StatusPill status={iup.status === 'Active' ? 'approved' : iup.status === 'Draft' ? 'pending' : 'notStarted'} label={iup.status} />
             <View style={styles.rowActions}>
-              <TouchableOpacity style={styles.iconBtn} onPress={handleExport}>
-                <Feather name="download" size={16} color={colors.navyText} />
+              <TouchableOpacity style={styles.iconBtn} onPress={() => setExportTarget(iup)}>
+                <Feather name="eye" size={16} color={colors.navyText} />
               </TouchableOpacity>
+              {iup.status === 'Draft' && (
+                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation?.navigate?.('IupGeneration', { studentId: iup.studentId })}>
+                  <Feather name="edit-2" size={16} color={colors.navyText} />
+                </TouchableOpacity>
+              )}
               {iup.status !== 'Archived' && (
                 <TouchableOpacity style={styles.iconBtn} onPress={() => handleArchive(iup)}>
                   <Feather name="archive" size={16} color={colors.navyText} />
@@ -96,14 +120,22 @@ export default function IupLibraryScreen({ navigation }: NativeStackScreenProps<
         ))}
         {filtered.length === 0 && <Text style={[typography.body, { color: colors.mutedText, textAlign: 'center' }]}>No IUPs match these filters.</Text>}
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!exportTarget}
+        title="IUP Record"
+        filename={exportTarget ? `${exportTarget.studentName.replace(/\s+/g, '_')}_IUP_v${exportTarget.version}.txt` : ''}
+        content={exportTarget ? buildExportText(exportTarget) : ''}
+        onClose={() => setExportTarget(null)}
+      />
     </SafeAreaView>
   );
 }
 
 const DEMO_LIST: IupRecord[] = [
-  { id: '1', studentName: 'Student A', finalizedDate: 'Jun 2, 2026', goalCount: 4, version: 2, status: 'Active' },
-  { id: '2', studentName: 'Student B', finalizedDate: 'May 20, 2026', goalCount: 3, version: 1, status: 'Active' },
-  { id: '3', studentName: 'Student D', finalizedDate: '—', goalCount: 2, version: 1, status: 'Draft' },
+  { id: '1', studentId: 'student-a', studentName: 'Student A', program: 'Pooled-Out', finalizedDate: 'Jun 2, 2026', goalCount: 4, version: 2, status: 'Active' },
+  { id: '2', studentId: 'student-b', studentName: 'Student B', program: 'Regular Program', finalizedDate: 'May 20, 2026', goalCount: 3, version: 1, status: 'Active' },
+  { id: '3', studentId: 'student-d', studentName: 'Student D', program: 'Regular Program', finalizedDate: '—', goalCount: 2, version: 1, status: 'Draft' },
 ];
 
 const styles = StyleSheet.create({

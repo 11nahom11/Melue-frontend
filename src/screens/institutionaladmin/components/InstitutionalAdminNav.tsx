@@ -7,9 +7,10 @@ import { typography } from '../../../theme/typography';
 import { useAuth } from '../../../context/AuthContext';
 import type { InstitutionalAdminStackParamList } from '../../../types';
 
-const TABS = ['Forms', 'Trial Logging', 'ABC Lists', 'Schedule', 'Goal Domains', 'Task Analysis', 'Programs', 'Clinic Info', 'Working Hours', 'Schools'];
+const TABS = ['Admin Panel', 'Forms', 'Trial Logging', 'ABC Lists', 'Schedule', 'Goal Domains', 'Task Analysis', 'Programs', 'Clinic Info', 'Working Hours', 'Schools'];
 
 export const IA_ROUTE_BY_TAB: Record<string, keyof InstitutionalAdminStackParamList> = {
+  'Admin Panel': 'AdminPanelOverview',
   Forms: 'FormBuilder',
   'Trial Logging': 'TrialLoggingFormat',
   'ABC Lists': 'AbcDropdownLists',

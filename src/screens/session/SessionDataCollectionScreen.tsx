@@ -28,6 +28,13 @@ import {
   swapStudents,
 } from '../../api/sessionApi';
 import type { SessionStackParamList, SessionRoster, Payload } from '../../types';
+import {
+  startSessionTimer,
+  resumeSessionTimer,
+  pauseSessionTimer,
+  remainingSeconds,
+  isTimerRunning,
+} from './sessionTimerStore';
 
 type Props = NativeStackScreenProps<SessionStackParamList, 'SessionDataCollection'>;
 
@@ -44,7 +51,7 @@ export default function SessionDataCollectionScreen({ route, navigation }: Props
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<SessionRoster | null>(null);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
-  const [isRunning, setIsRunning] = useState(true); // spec shows a green play/pause toggle next to the timer
+  const [isRunning, setIsRunning] = useState(isTimerRunning());
   const [incidentModal, setIncidentModal] = useState<IncidentModalState | null>(null);
 
   const loadRoster = useCallback(async () => {
@@ -52,11 +59,15 @@ export default function SessionDataCollectionScreen({ route, navigation }: Props
       setLoading(true);
       const { data } = await getSessionRoster(sessionId);
       setSession(data);
-      setSecondsRemaining((data.blockDurationMinutes || 90) * 60);
+      startSessionTimer(sessionId, (data.blockDurationMinutes || 90) * 60);
+      setSecondsRemaining(remainingSeconds());
+      setIsRunning(isTimerRunning());
     } catch (err) {
       // Fallback demo data so the screen is reviewable before backend is ready
       setSession(DEMO_SESSION);
-      setSecondsRemaining((DEMO_SESSION.blockDurationMinutes || 90) * 60);
+      startSessionTimer(sessionId, (DEMO_SESSION.blockDurationMinutes || 90) * 60);
+      setSecondsRemaining(remainingSeconds());
+      setIsRunning(isTimerRunning());
     } finally {
       setLoading(false);
     }
@@ -69,10 +80,20 @@ export default function SessionDataCollectionScreen({ route, navigation }: Props
   useEffect(() => {
     if (!isRunning || secondsRemaining === null) return undefined;
     const timer = setInterval(() => {
-      setSecondsRemaining((s) => Math.max(0, (s ?? 0) - 1));
+      setSecondsRemaining(remainingSeconds());
     }, 1000);
     return () => clearInterval(timer);
   }, [isRunning, secondsRemaining === null]);
+
+  const handleToggleTimer = () => {
+    if (isRunning) {
+      pauseSessionTimer();
+    } else {
+      resumeSessionTimer(sessionId, (session?.blockDurationMinutes || DEMO_SESSION.blockDurationMinutes || 90) * 60);
+    }
+    setSecondsRemaining(remainingSeconds());
+    setIsRunning(isTimerRunning());
+  };
 
   const handleSelectPromptLevel = async (studentId: string, goalId: string | undefined, level: string, stepId?: string) => {
     // Optimistic UI update
@@ -155,6 +176,10 @@ export default function SessionDataCollectionScreen({ route, navigation }: Props
     navigation?.navigate?.('GoalProgress', { studentId, goalId });
   };
 
+  const handleViewProfile = (studentId: string) => {
+    navigation?.navigate?.('StudentProfile', { studentId });
+  };
+
   const handleSessionSummary = () => {
     navigation?.navigate?.('SessionSummary', { sessionId });
   };
@@ -193,7 +218,7 @@ export default function SessionDataCollectionScreen({ route, navigation }: Props
           </View>
           <TouchableOpacity
             style={styles.playPauseBtn}
-            onPress={() => setIsRunning((r) => !r)}
+            onPress={handleToggleTimer}
             accessibilityLabel={isRunning ? 'Pause timer' : 'Resume timer'}
           >
             <Feather name={isRunning ? 'pause' : 'play'} size={16} color={colors.white} />
@@ -211,6 +236,7 @@ export default function SessionDataCollectionScreen({ route, navigation }: Props
             onMasteryCheck={handleMasteryCheck}
             onActivate={handleActivate}
             onViewGoalProgress={handleViewGoalProgress}
+            onViewProfile={handleViewProfile}
             onUndo={() => {
               setSession((prev) => (prev ? {
                 ...prev,

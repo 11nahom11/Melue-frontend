@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import DirectorNav, { DIRECTOR_ROUTE_BY_TAB } from './components/DirectorNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getSessionReports, generateBiAnnualReport, getFoundationOverview } from '../../api/directorApi';
 import type { DirectorStackParamList } from '../../types';
 
@@ -31,6 +32,8 @@ export default function ReportsOversightScreen({ navigation }: NativeStackScreen
   const [activeTab, setActiveTab] = useState('Session Reports');
   const [sessionReports, setSessionReports] = useState<SessionReport[]>([]);
   const [overview, setOverview] = useState<FoundationOverview | null>(null);
+  const [biAnnualContent, setBiAnnualContent] = useState<string | null>(null);
+  const [overviewContent, setOverviewContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -49,17 +52,44 @@ export default function ReportsOversightScreen({ navigation }: NativeStackScreen
 
   useEffect(() => { load(); }, [load]);
 
+  const buildBiAnnualText = (): string => {
+    const lines: string[] = [];
+    lines.push('BI-ANNUAL REPORT — MELUE FOUNDATION');
+    lines.push(`Generated: ${new Date().toLocaleDateString()}`);
+    lines.push('');
+    lines.push('6-month progress summary across all active students.');
+    lines.push('');
+    lines.push('Active Students (subset)');
+    sessionReports.forEach((r) => {
+      lines.push(`- ${r.studentNames.join(', ')} — teacher ${r.teacherName}, latest summary ${r.date}`);
+    });
+    lines.push('');
+    lines.push('This draft reflects the report content generated in-app; final formatting is handled by the file-service when a backend exists.');
+    return lines.join('\n');
+  };
+
   const handleGenerateBiAnnual = async () => {
     try {
       await generateBiAnnualReport({});
     } catch (err) {}
-    Alert.alert('Bi-Annual Report', 'Report generated (stub - no PDF viewer built yet).');
+    setBiAnnualContent(buildBiAnnualText());
   };
 
-  const handlePreview = () => Alert.alert('Preview PDF', 'PDF viewer not wired up yet (stub).');
-  const handleDownload = () => Alert.alert('Download PDF', 'Not wired up yet (stub).');
+  const handlePreview = () => setBiAnnualContent(buildBiAnnualText());
+  const handleDownload = () => setBiAnnualContent(buildBiAnnualText());
   const handleEmailParent = () => Alert.alert('Email Report to Parent', 'Uses Parent Communication - not wired up yet (stub).');
-  const handleExportOverview = () => Alert.alert('Export Overview', 'PDF/CSV export not wired up yet (stub).');
+  const handleExportOverview = () => {
+    if (!overview) return;
+    setOverviewContent(
+      [
+        'FOUNDATION-WIDE ANALYTICS',
+        `Total Students: ${overview.totalStudents}`,
+        `Total Teachers: ${overview.totalTeachers}`,
+        `Sessions This Month: ${overview.sessionsThisMonth}`,
+        `Avg Goal Progress: ${overview.avgGoalProgress}%`,
+      ].join('\n')
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -98,8 +128,8 @@ export default function ReportsOversightScreen({ navigation }: NativeStackScreen
               <Text style={styles.primaryBtnText}>Generate Report</Text>
             </TouchableOpacity>
             <View style={styles.btnRow}>
-              <TouchableOpacity style={styles.secondaryBtn} onPress={handlePreview}><Text style={styles.secondaryBtnText}>Preview PDF</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryBtn} onPress={handleDownload}><Text style={styles.secondaryBtnText}>Download PDF</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={handlePreview}><Text style={styles.secondaryBtnText}>Preview Report</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={handleDownload}><Text style={styles.secondaryBtnText}>Export / Download</Text></TouchableOpacity>
               <TouchableOpacity style={styles.secondaryBtn} onPress={handleEmailParent}><Text style={styles.secondaryBtnText}>Email to Parent</Text></TouchableOpacity>
             </View>
           </View>
@@ -128,6 +158,22 @@ export default function ReportsOversightScreen({ navigation }: NativeStackScreen
           </View>
         )}
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!biAnnualContent}
+        title="Bi-Annual Report"
+        filename={`BiAnnualReport_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={biAnnualContent ?? ''}
+        onClose={() => setBiAnnualContent(null)}
+      />
+
+      <ExportPreviewModal
+        visible={!!overviewContent}
+        title="Foundation Overview"
+        filename={`FoundationOverview_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={overviewContent ?? ''}
+        onClose={() => setOverviewContent(null)}
+      />
     </SafeAreaView>
   );
 }

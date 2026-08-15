@@ -9,11 +9,12 @@
 // (cards, chips, colors) but flag for design review before shipping.
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import TopNav from '../../components/TopNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { useAuth } from '../../context/AuthContext';
 import { handleTeacherTabPress } from '../../navigation/teacherTabNavigation';
 import { markAttendance, markBulkAttendance, getAttendanceHistory, getAttendanceReport } from '../../api/sessionApi';
@@ -68,6 +69,7 @@ export default function AttendanceScreen({ route, navigation }: Props) {
   const sessionId = route?.params?.sessionId ?? 'DEMO_SESSION_ID';
   const [activeType, setActiveType] = useState<PersonType>('student');
   const [roster, setRoster] = useState<Record<PersonType, Person[]>>({ student: [], therapist: [], support_staff: [] });
+  const [reportContent, setReportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -107,13 +109,36 @@ export default function AttendanceScreen({ route, navigation }: Props) {
     }
   };
 
+  const buildReportText = (scope: 'daily' | 'monthly'): string => {
+    const lines: string[] = [];
+    lines.push(`ATTENDANCE REPORT — ${scope === 'daily' ? 'DAILY' : 'MONTHLY'}`);
+    lines.push(`Session: ${sessionId} · Generated: ${new Date().toLocaleDateString()}`);
+    lines.push('');
+    (['student', 'therapist', 'support_staff'] as PersonType[]).forEach((type) => {
+      const label = TYPE_TABS.find((t) => t.key === type)?.label ?? type;
+      lines.push(`${label}`);
+      const people = roster[type] || [];
+      if (people.length === 0) { lines.push('  (no entries)'); }
+      people.forEach((p) => {
+        const statusLabel = STATUS_OPTIONS[type].find((o) => o.key === p.status)?.label ?? (p.status ?? 'Unmarked');
+        lines.push(`  ${p.name}: ${statusLabel}`);
+      });
+      lines.push('');
+    });
+    const total = (['student', 'therapist', 'support_staff'] as PersonType[]).reduce((sum, t) => sum + (roster[t] || []).length, 0);
+    const present = (['student', 'therapist', 'support_staff'] as PersonType[]).reduce(
+      (sum, t) => sum + (roster[t] || []).filter((p) => p.status === 'present').length,
+      0
+    );
+    lines.push(`SUMMARY: ${present}/${total} present`);
+    return lines.join('\n');
+  };
+
   const handleReport = async (scope: 'daily' | 'monthly') => {
     try {
       await getAttendanceReport({ scope });
-      Alert.alert(`${scope === 'daily' ? 'Daily' : 'Monthly'} report`, 'Report generated (stub - no viewer built yet).');
-    } catch (err) {
-      Alert.alert(`${scope === 'daily' ? 'Daily' : 'Monthly'} report`, 'Report generation not wired up yet.');
-    }
+    } catch (err) {}
+    setReportContent(buildReportText(scope));
   };
 
   const activeRoster = roster[activeType] || [];
@@ -176,6 +201,14 @@ export default function AttendanceScreen({ route, navigation }: Props) {
           <Text style={[typography.body, { textAlign: 'center', color: colors.mutedText }]}>Nobody to mark for this type today.</Text>
         )}
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!reportContent}
+        title="Attendance Report"
+        filename={`AttendanceReport_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={reportContent ?? ''}
+        onClose={() => setReportContent(null)}
+      />
     </SafeAreaView>
   );
 }

@@ -11,6 +11,7 @@ import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import DirectorNav, { DIRECTOR_ROUTE_BY_TAB } from './components/DirectorNav';
 import StatusPill from '../../components/StatusPill';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { generateCustomReport } from '../../api/directorApi';
 import type { DirectorStackParamList } from '../../types';
 
@@ -51,6 +52,7 @@ export default function ReportBuilderScreen({ navigation }: Props) {
   const [diagnosis, setDiagnosis] = useState('All');
   const [results, setResults] = useState<ReportRow[] | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const Chip = ({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) => (
     <TouchableOpacity style={[styles.chip, selected && styles.chipSelected]} onPress={onPress}>
@@ -97,6 +99,24 @@ export default function ReportBuilderScreen({ navigation }: Props) {
     return [header, ...rows].map((row) => row.join(',')).join('\n');
   };
 
+  const buildReportText = (): string => {
+    if (!results) return '';
+    const lines: string[] = [];
+    lines.push('CUSTOM STUDENT REPORT — MELUE FOUNDATION');
+    lines.push(`Generated: ${new Date().toLocaleDateString()}`);
+    lines.push(`Filters: ${program} · ${therapist} · Ages ${ageFrom}–${ageTo} · Attendance < ${attendanceMax}% · ${period}`);
+    lines.push(`Assessment: ${scoreFilter} · Goal: ${goalStatus} · Behavior: ${behaviorType} · Diagnosis: ${diagnosis}`);
+    lines.push('');
+    lines.push('Name | Age | Program | Therapist | Attendance % | Assessment % | Goal Status | Behavior Type | Diagnosis');
+    lines.push('---');
+    results.forEach((r) => {
+      lines.push(`${r.name} | ${r.age} | ${r.program} | ${r.therapist} | ${r.attendance} | ${r.assessmentScore} | ${r.goalStatus} | ${r.behaviorType} | ${r.diagnosis}`);
+    });
+    lines.push('---');
+    lines.push(`${results.length} student(s) matched.`);
+    return lines.join('\n');
+  };
+
   const handleExport = async (format: string) => {
     if (!results || results.length === 0) { Alert.alert('Nothing to export', 'Generate a report first.'); return; }
     if (format === 'CSV') {
@@ -108,7 +128,7 @@ export default function ReportBuilderScreen({ navigation }: Props) {
       }
       return;
     }
-    Alert.alert(`Export ${format}`, `${format} export is stubbed for now — wires to a file-service endpoint when a backend exists.`);
+    setExportContent(buildReportText());
   };
 
   return (
@@ -181,6 +201,14 @@ export default function ReportBuilderScreen({ navigation }: Props) {
 
         <Step label="Tip" value="Only students in the selected program, age range, and below the attendance threshold are included." />
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Custom Student Report"
+        filename={`CustomReport_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }

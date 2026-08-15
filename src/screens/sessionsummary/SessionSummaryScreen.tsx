@@ -24,6 +24,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { getSessionSummary, submitSessionSummary, saveSessionDraft } from '../../api/sessionApi';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
+import { resetSessionTimer } from '../session/sessionTimerStore';
 import type { SessionStackParamList, SessionSummary, SessionSummaryStudent, Goal, Trial } from '../../types';
 
 type Props = NativeStackScreenProps<SessionStackParamList, 'SessionSummary'>;
@@ -143,6 +145,7 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
   const [notes, setNotes] = useState('');
   const [trialLogTarget, setTrialLogTarget] = useState<{ goalName: string; trials: Trial[] } | null>(null);
   const [incidentsExpanded, setIncidentsExpanded] = useState(false);
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -186,6 +189,7 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
     }
     try {
       await submitSessionSummary(sessionId, { notes });
+      resetSessionTimer();
       Alert.alert('Session submitted', 'Sent to your Program Coordinator.');
       navigation?.navigate?.('SessionDataCollection');
     } catch (err) {
@@ -194,9 +198,32 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
   };
 
   const handlePreviewPdf = () => {
-    // TODO: real PDF preview - depends on a report-rendering approach
-    // (likely shared with MR-35's Export feature). Stubbed for now.
-    Alert.alert('Preview PDF', 'PDF preview not wired up yet.');
+    if (!summary) return;
+    const lines = [
+      `Melu'e Foundation — Session Summary`,
+      `Station: ${summary.stationName}`,
+      `Teacher: ${summary.teacherName}`,
+      `Time: ${summary.startTime} – ${summary.endTime} (${summary.durationMinutes} min)`,
+      '',
+      'STUDENT GOAL DATA',
+      ...summary.students.flatMap((s) => [
+        `— ${s.name}`,
+        ...s.goals.map((g) =>
+          g.goalType === 'task_analysis'
+            ? `  • ${g.name} (TA): ${g.independencePercent}% independent · mastery: ${g.overallMasteryStatus}`
+            : `  • ${g.name}: ${g.independencePercent}% independent · ${g.totalTrials} trials · ${Object.entries(g.promptBreakdown || {}).map(([l, c]) => `${l}:${c}`).join(' ')}`
+        ),
+      ]),
+      '',
+      `BEHAVIOR INCIDENTS: ${summary.incidents.length}`,
+      ...summary.incidents.map((inc) => `• ${inc.time} — ${inc.behavior} (${inc.studentName})`),
+      '',
+      'TEACHER QUALITATIVE NOTES',
+      notes || '(no notes added yet)',
+      '',
+      `Preview generated ${new Date().toLocaleString()}`,
+    ];
+    setPreviewContent(lines.join('\n'));
   };
 
   if (!summary) return null;
@@ -281,6 +308,14 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
         goalName={trialLogTarget?.goalName}
         trials={trialLogTarget?.trials}
         onClose={() => setTrialLogTarget(null)}
+      />
+
+      <ExportPreviewModal
+        visible={!!previewContent}
+        title="Session Summary"
+        filename={`SessionSummary_${summary?.stationName.replace(/\s+/g, '_')}.txt`}
+        content={previewContent ?? ''}
+        onClose={() => setPreviewContent(null)}
       />
     </SafeAreaView>
   );

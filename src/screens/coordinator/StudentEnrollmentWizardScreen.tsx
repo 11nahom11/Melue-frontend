@@ -11,8 +11,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import CoordinatorNav from './components/CoordinatorNav';
+import ProgramDirectorNav from '../programdirector/components/ProgramDirectorNav';
+import { PD_ROUTE_BY_TAB } from '../programdirector/components/pdNavRoutes';
+import { useAuth, ROLES } from '../../context/AuthContext';
 import { createStudentEnrollment } from '../../api/coordinatorApi';
-import type { CoordinatorStackParamList } from '../../types';
+import type { CoordinatorStackParamList, ProgramDirectorStackParamList } from '../../types';
 
 const STEPS = ['Student Info', 'Parent Info', 'Medical Info', 'Documents', 'Assign Therapist', 'Review'];
 
@@ -61,9 +64,11 @@ const INITIAL_STATE: WizardState = {
   files: [],
 };
 
-type Props = NativeStackScreenProps<CoordinatorStackParamList, 'StudentEnrollmentWizard'>;
+type Props = NativeStackScreenProps<CoordinatorStackParamList | ProgramDirectorStackParamList, 'StudentEnrollmentWizard'>;
 
 export default function StudentEnrollmentWizardScreen({ navigation }: Props) {
+  const { session } = useAuth();
+  const isProgramDirector = session?.role === ROLES.PROGRAM_DIRECTOR;
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<WizardState>(INITIAL_STATE);
 
@@ -175,7 +180,11 @@ export default function StudentEnrollmentWizardScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <CoordinatorNav activeTab="Enrollment" onTabPress={(t) => t !== 'Enrollment' && navigation?.navigate?.(navRouteForTab(t) as never)} />
+      {isProgramDirector ? (
+        <ProgramDirectorNav activeTab="Enrollment" onTabPress={(t) => navigation?.navigate?.(PD_ROUTE_BY_TAB[t] as never)} />
+      ) : (
+        <CoordinatorNav activeTab="Enrollment" onTabPress={(t) => t !== 'Enrollment' && navigation?.navigate?.(navRouteForTab(t) as never)} />
+      )}
 
       <View style={styles.header}>
         <Text style={typography.h1}>Enrollment Wizard</Text>

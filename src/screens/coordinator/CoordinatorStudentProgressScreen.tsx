@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import CoordinatorNav from './components/CoordinatorNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getStudentProgressOverview, flagStudent } from '../../api/coordinatorApi';
 import type { CoordinatorStackParamList } from '../../types';
 
@@ -52,6 +53,7 @@ export default function CoordinatorStudentProgressScreen({ navigation }: NativeS
   const [data, setData] = useState<StudentProgressData | null>(null);
   const [flagged, setFlagged] = useState(false);
   const [notes, setNotes] = useState('');
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -78,7 +80,31 @@ export default function CoordinatorStudentProgressScreen({ navigation }: NativeS
   };
 
   const handlePrint = () => {
-    Alert.alert('Print Report', 'PDF export not wired up yet (stub).');
+    if (!data) return;
+    setExportContent(
+      [
+        `Melu'e Foundation — Student Progress Report`,
+        `Student: ${data.name} · Age ${data.age} · ${data.program}`,
+        `Flagged: ${flagged ? 'Yes' : 'No'}`,
+        '',
+        'ASSESSMENT SUMMARY',
+        `Skills: ${data.assessmentSummary.skills}`,
+        `Behavior: ${data.assessmentSummary.behavior}`,
+        `Preferences: ${data.assessmentSummary.preferences}`,
+        '',
+        'CURRENT GOALS',
+        ...data.goals.map((g) => `• ${g.name}: ${g.percent}% — ${g.status}`),
+        '',
+        'BEHAVIOR INCIDENT TRENDS',
+        data.incidentSummary,
+        '',
+        'SESSION HISTORY',
+        ...data.sessionHistory.map((s) => `• ${s.date} — ${s.teacherName}`),
+        '',
+        'COORDINATOR NOTES',
+        notes || '(none)',
+      ].join('\n')
+    );
   };
 
   if (!data) return null;
@@ -173,6 +199,14 @@ export default function CoordinatorStudentProgressScreen({ navigation }: NativeS
           />
         </View>
       </ScrollView>
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Student Progress Report"
+        filename={`${data.name.replace(/\s+/g, '_')}_ProgressReport.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }

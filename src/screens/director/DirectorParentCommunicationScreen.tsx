@@ -10,6 +10,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import DirectorNav, { DIRECTOR_ROUTE_BY_TAB } from './components/DirectorNav';
+import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getDirectorConversations, getDirectorConversationThread, sendDirectorMessage, toggleConversationRead } from '../../api/directorApi';
 import type { DirectorStackParamList } from '../../types';
 
@@ -38,6 +39,7 @@ export default function DirectorParentCommunicationScreen({ navigation }: Native
   const [draft, setDraft] = useState('');
   const [showLog, setShowLog] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<{ id: string; name: string }[]>([]);
+  const [exportContent, setExportContent] = useState<string | null>(null);
 
   const loadList = useCallback(async () => {
     try {
@@ -85,7 +87,20 @@ export default function DirectorParentCommunicationScreen({ navigation }: Native
     setConversations((prev) => prev.map((c) => (c.id === activeId ? { ...c, unreadCount: nextUnread ? 1 : 0 } : c)));
   };
 
-  const handlePrintLog = () => Alert.alert('Print Communication Log', 'PDF export not wired up yet (stub).');
+  const handlePrintLog = () => {
+    setExportContent(
+      [
+        `Melu'e Foundation — Parent Communication Log`,
+        `Generated ${new Date().toLocaleString()}`,
+        '',
+        ...conversations.map((c) => [
+          `${c.studentName} (${c.parentName})${c.escalated ? ' [ESCALATED]' : ''}`,
+          `  Unread: ${c.unreadCount} · Last: ${c.lastMessagePreview}`,
+        ]).flat(),
+        conversations.length === 0 ? '(no conversations)' : '',
+      ].join('\n')
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -172,6 +187,14 @@ export default function DirectorParentCommunicationScreen({ navigation }: Native
           )}
         </View>
       </View>
+
+      <ExportPreviewModal
+        visible={!!exportContent}
+        title="Communication Log Export"
+        filename={`ParentCommunicationLog_${new Date().toISOString().slice(0, 10)}.txt`}
+        content={exportContent ?? ''}
+        onClose={() => setExportContent(null)}
+      />
     </SafeAreaView>
   );
 }
