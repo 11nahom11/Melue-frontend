@@ -1,9 +1,10 @@
 # Melu'e Foundation App — Project Notes
 
-Frontend-only (no backend team - every `*Api.js` file is an assumed
+Frontend-only (no backend team — every `src/api/*.ts` file is an assumed
 contract with a `DEMO_*` fallback, not a real integration). All 7 roles
 from the spec docs are built: Teacher, Therapy Coordinator, Program
-Director, Director, Institutional Admin, System Admin, Parent.
+Director, Director, Institutional Admin, System Admin, Parent. The screen
+specifications live in `frontend description/`.
 
 ## How to log in
 
@@ -17,60 +18,81 @@ its email + Sign In, any password works) to enter that role:
 | Director | director@melue.org |
 | Institutional Admin | admin@melue.org |
 | System Admin | sysadmin@melue.org |
-| Program Director | pd@melue.org (not in Figma's demo list, added since the role exists in the spec docs) |
-| Parent | parent@melue.org (same as above) |
+| Program Director | pd@melue.org |
+| Parent | parent@melue.org |
 
-## Screen count: 42 screens across 7 roles
+## Screen inventory (by role)
 
-### Teacher / Therapist (11 screens) — Daily Operations scope, expanded to full role coverage
-| Screen | Spec | Notes |
-|---|---|---|
-| Teacher Dashboard (SCR-TEA-001) | Figma (exact match) | Today's Schedule, Quick Actions, Assessment Tasks, Pending Mastery Checks, Notifications - now the initial route for this role |
-| Assessment Dashboard (SCR-010) | Figma (exact match) | 6-Week Assessment period, per-student ABLLS/Behavior cards. **Originally Hanania's ticket, not Daily Operations** - built now that the whole app is in scope. ABLLS/Behavior assessment *content* screens themselves (the actual assessment forms) are NOT built - only this launcher/dashboard |
-| ABC Log / ABC Data Sheet (SCR-003A) | Figma (exact match) | Teacher's view of behavior incidents. **Originally Hanania's ticket.** Distinct from the Behavior Incident Modal (which *records* an incident during a session) and from Institutional Admin's ABC Dropdown List Manager (which configures the *option lists* both of these use) |
-| Session Data Collection (SCR-002) | Figma + spec doc | Variable timer, color-coded trial icons, tap-to-activate, Task Analysis goal type |
-| Behavior Incident Modal (SCR-003) | Spec doc | Dropdown options hardcoded from spec examples - real source is Institutional Admin's ABC List Manager |
-| Goal Mastery Check (SCR-004) | Spec doc | Two-Teacher Generalization Check |
-| Session Summary (SCR-005) | Spec doc | The live end-of-session report |
-| Daily Notes & Summaries | Figma | Historical list of past sessions |
-| Session Note Editor | Spec doc | Simplified markdown toolbar, not true rich text; real photo/doc attachments via expo-image-picker/expo-document-picker |
-| Goal Progress Update | Business logic confirmed by spec, no screen layout | **Draft — still needs design review**. Reachable via "View Progress →" link on the active goal in Session Data Collection |
-| Staff Scheduling Calendar + Attendance | Spec doc (via SCR-TC-005, role mismatch — see below) | |
+~60 screen files across the 7 role stacks, plus shared components
+(`StatusPill`, `ExportPreviewModal`) and notification lists.
 
-**Parents tab still shows "not built here"** — this is the one deliberate exception. It's SCR-TEA-005 (Teacher-side messaging), distinct from the Parent role's own Communication screen (which IS built — see Parent section below, log in as `parent@melue.org`). Building the Teacher-side counterpart would mean designing a second messaging UI without a real backend to unify the threads between the two — flagged rather than guessed at.
+### Teacher / Therapist (13)
+Teacher Dashboard (SCR-TEA-001), Assessment Dashboard (SCR-010),
+Skills Assessment / ABLLS-R (SCR-011), ABLLS Need Analysis Map
+(SCR-TEA-002A), Behavior Assessment MASS/FAST + ABC (SCR-012/013), ABC Log,
+Session Data Collection (SCR-002), Goal Mastery Check (SCR-004), Session
+Summary (SCR-005), Daily Notes & Summaries, Session Note Editor, Goal
+Progress, Scheduling Calendar + Attendance, Student Profile (SCR-006A),
+Parent Communication (SCR-TEA-005).
 
-### Therapy Coordinator (6 screens)
-Dashboard, Live Session Monitoring (auto-refreshes every 30s), Session
-Summary Review (bulk approve), Student Progress Monitoring, Operational
-Management (the real scheduling home — reuses `AppointmentFormModal`),
-Parent Communication.
+### Therapy Coordinator (12)
+Dashboard (SCR-TC-001), Live Session Monitoring (SCR-TC-002, 30s
+auto-refresh + working station filter), Session Summary Review (SCR-TC-003,
+bulk approve), Student Progress Monitoring (SCR-TC-004), Operational
+Management (SCR-TC-005), Parent Communication (SCR-TC-006), Student
+Enrollment + Enrollment Wizard (SCR-009), IUP Generation (SCR-014), Student
+Profile, Room/Resource Scheduling, Workload Dashboard, Notifications.
 
-### Program Director (8 screens)
-Dashboard, Assessment Review & Approval, IUP Generation (goal-bank-driven
-slot assignment), IUP Library, Student Caseload, Goal Bank Management
-(full CRUD), Parent Communication, Graph & Chart View.
+### Program Director (9)
+Dashboard (SCR-PD-001), Assessment Review & Approval (SCR-PD-002), IUP
+Generation & Management (SCR-PD-003), IUP Library (SCR-PD-004), Student
+Caseload (SCR-PD-005), Goal Bank Management (SCR-PD-006), Parent
+Communication (SCR-PD-007), Graph & Chart View (SCR-PD-008), Goal Mastery
+Approval (SCR-PD-009 — shares SCR-DIR-003).
 
-### Director (6 screens)
-Dashboard, Staff Scheduling (block-level teacher/student assignment,
-capacity-validated), Goal Mastery Approval (receives Teacher's SCR-004
-submissions), Parent Communication (centralized hub + escalation log),
-Reports & Oversight, Student Progress Monitoring.
+### Director (7)
+Dashboard (SCR-DIR-001), Staff Scheduling (SCR-DIR-002, block-level
+capacity-validated), Goal Mastery Approval (SCR-DIR-003), Parent
+Communication (SCR-DIR-004, hub + escalation audit log), Reports & Oversight
+(SCR-DIR-005), Report Builder, Student Progress Monitoring (SCR-DIR-006).
 
-### Institutional Admin (6 screens)
-Form Builder (reorder-by-button, not drag-and-drop — see simplifications),
-Trial Logging Format (the real source of Teacher's FP/PP/G/+ levels), ABC
-Dropdown Lists (real source of the Incident Modal's options), Session
-Schedule & Capacity, Goal Domain Definitions, Task Analysis Templates
-(real source of the Task Analysis goal type).
+### Institutional Admin (11)
+Admin Panel Overview, Form Builder (SCR-ADMIN-001), Trial Logging Format
+(SCR-ADMIN-002), ABC Dropdown Lists (SCR-ADMIN-003), Session Schedule &
+Capacity (SCR-ADMIN-004), Goal Domain Definitions (SCR-ADMIN-005), Task
+Analysis Templates (SCR-ADMIN-006), Clinical Categories (SCR-ADMIN-007),
+Clinic Info (SCR-ADMIN-008), Working Hours (SCR-ADMIN-009), School Settings
+(SCR-ADMIN-010).
 
-### System Admin (3 screens)
-Staff Account Management (bulk actions, password reset), Role Management,
-Permission Configuration (RBAC matrix with audit trail).
+### System Admin (4)
+Staff Account Management (SCR-SYS-001), Role Management (SCR-SYS-002),
+Permission Configuration / RBAC (SCR-SYS-003), Audit Log (SCR-SYS-004).
 
-### Parent (4 screens)
-Dashboard, Child Progress View (parent-friendly language, session summary
-modal), Home Observation Log (handles team-requested logs with prefill),
-Parent Communication (quick-reply templates, escalation visibility).
+### Parent (6)
+Dashboard (SCR-PAR-001), Child Progress View (SCR-PAR-002), Home Observation
+Log (SCR-PAR-003), Parent Communication (SCR-PAR-004), Reports,
+Notifications.
+
+## Latest work (most recent pass)
+
+- **Session timer no longer resets** — the Session Data Collection timer now
+  lives in a module-level wall-clock store (`src/screens/session/sessionTimerStore.ts`)
+  computed from `Date.now()`, so switching tabs or backgrounds never restarts
+  or drifts it. It resets only when a session is actually submitted.
+- **SCR-TC-002** Live Session Monitoring now has a working Station filter
+  (previously dead state).
+- **SCR-PAR-004** Parent Communication: "Mark as Resolved" / "Reopen" with a
+  real audit-log pane; `setParentConversationResolved` added to `parentApi.ts`.
+- **SCR-006A** Teacher Student Profile: new `StudentProfileScreen` reachable
+  by tapping the student name on a session card.
+- **SCR-PD-009** Program Director can now approve goal mastery — the shared
+  approval screen switches to a Program Director nav with an **Approvals** tab.
+- **SCR-014** Coordinator IUP Generation — the screen is role-aware and
+  reachable from the Coordinator Quick Actions ("Generate IUP").
+- **SCR-009** Program Director Enrollment Wizard — "Enrollment" tab + dashboard
+  quick action.
+- Verified end-to-end: full `tsc --noEmit` typecheck passes, and a production
+  bundle (`npx expo export`) compiles clean.
 
 ## Known unresolved issue: MR-38/39/40 role mismatch
 
@@ -81,25 +103,24 @@ Scheduling Calendar), MR-39 (Appointments), MR-40 (Attendance) under
 (simpler, single-teacher view) and the Coordinator's Operational
 Management screen (full cross-teacher view with performance metrics).
 They currently work independently and don't sync with each other — a
-real backend would need one source of truth. Worth a team conversation
-about whether to keep both or consolidate.
+real backend would need one source of truth.
 
 ## Simplifications made against spec (review before shipping)
 
 - **Form Builder**: reorder-by-button instead of drag-and-drop.
-- **Behavior Incident Modal / ABC Lists**: not yet connected — Admin's
-  list manager and Teacher's modal both exist but don't share data source
-  yet (would happen automatically once a real backend exists).
-- **Trial Logging Format / Session screen**: same — Admin can configure
-  prompt levels, Teacher's screen still hardcodes FP/PP/G/+.
+- **Admin config → runtime screens**: Admin's ABC Dropdown Lists / Trial
+  Logging Format / Task Analysis Templates configure options that Teacher
+  screens currently hardcode — they'd share data automatically once a real
+  backend exists.
 - **Session Note Editor**: markdown-style toolbar, not true rich text.
-- **Attendance/Report screens**: several "generate report" actions are
-  stub alerts — no PDF viewer built anywhere in the app yet.
-- **Charts**: Program Director's Graph & Chart View uses simple bar
-  visualizations, not a real charting library (no chart lib was
-  installed — would recommend `react-native-svg` + `victory-native` or
-  similar if real charts are needed).
-- **Login**: no real credential check, entirely frontend/demo.
+- **PDF/Excel export**: "generate report" actions open a text-preview
+  share sheet — no PDF library installed yet.
+- **Charts**: Program Director's Graph & Chart View uses hand-built bar
+  visualizations, not a charting library (would recommend
+  `react-native-svg` + `victory-native` if real charts are needed).
+- **Login / auth**: no credential check, entirely frontend/demo.
+- **Offline queue / sync**: not implemented — needs AsyncStorage + backend.
+- **Push notifications / read receipts**: stubs — need a backend.
 
 ## Dependencies
 
@@ -112,17 +133,19 @@ pulling.
 Every role follows the same pattern — useful if anything needs revisiting:
 
 ```
-src/api/<role>Api.js              - assumed backend contract
-src/screens/<role>/components/<Role>Nav.js  - role-specific top nav + tab-to-route map
-src/screens/<role>/<ScreenName>Screen.js    - one file per screen
-src/navigation/<Role>Stack.js     - React Navigation stack for the role
+src/api/<role>Api.ts              - assumed backend contract (DEMO_* fallbacks)
+src/screens/<role>/components/<Role>Nav.tsx - role-specific top nav + tab-to-route map
+src/screens/<role>/<ScreenName>Screen.tsx   - one file per screen
+src/navigation/<Role>Stack.tsx    - React Navigation stack for the role
 ```
 
-`RootNavigator.js` maps `AuthContext`'s `session.role` to the right stack
+`RootNavigator.tsx` maps `AuthContext`'s `session.role` to the right stack
 via `STACK_BY_ROLE`. Adding an 8th role means: register it in
-`AuthContext.js`'s `ROLES`/`DEMO_ACCOUNTS`, build the four files above,
+`AuthContext.tsx`'s `ROLES`/`DEMO_ACCOUNTS`, build the four files above,
 add one line to `STACK_BY_ROLE`.
 
 Shared across all roles: `src/theme` (colors, typography), `src/components`
-(`StatusPill` — used everywhere; `TopNav` — Teacher-specific, not shared
-despite the generic name).
+(`StatusPill` — used everywhere, statuses typed via `StatusType`).
+Screens shared between two stacks (Goal Mastery Approval: Director /
+Program Director; Student Enrollment Wizard; IUP Generation) switch their
+tab bar based on `session.role`.
