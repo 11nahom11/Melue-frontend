@@ -51,6 +51,7 @@ type Props = NativeStackScreenProps<CoordinatorStackParamList, 'CoordinatorDashb
 
 export default function CoordinatorDashboardScreen({ navigation }: Props) {
   const [data, setData] = useState<CoordinatorDashboardData | null>(null);
+  const [now, setNow] = useState(new Date());
 
   const load = useCallback(async () => {
     try {
@@ -64,6 +65,11 @@ export default function CoordinatorDashboardScreen({ navigation }: Props) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleTabPress = (tab: string) => {
     const routeByTab: Record<string, keyof CoordinatorStackParamList> = {
@@ -83,13 +89,23 @@ export default function CoordinatorDashboardScreen({ navigation }: Props) {
 
   if (!data) return null;
 
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
   return (
     <SafeAreaView style={styles.safe}>
       <CoordinatorNav activeTab="Dashboard" onTabPress={handleTabPress} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
-          <Text style={typography.h1}>Therapy Coordinator Dashboard</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={typography.h1}>Therapy Coordinator Dashboard</Text>
+            <Text style={typography.body}>{dateStr}</Text>
+          </View>
+          <View style={styles.clockPill}>
+            <Feather name="clock" size={14} color={colors.mutedText} style={{ marginRight: spacing.xs }} />
+            <Text style={styles.clockText}>{timeStr}</Text>
+          </View>
           <TouchableOpacity style={styles.notifBell} onPress={() => navigation?.navigate?.('Notifications')}>
             <Feather name="bell" size={18} color={colors.navyText} />
             {data.unreadCount > 0 && (
@@ -179,7 +195,9 @@ const DEMO_DATA: CoordinatorDashboardData = {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   content: { padding: spacing.lg, gap: spacing.lg },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
+  clockPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  clockText: { fontWeight: '700', color: colors.navyText, fontVariant: ['tabular-nums'] },
   notifBell: { position: 'relative' },
   notifBadge: { position: 'absolute', top: -4, right: -6, backgroundColor: '#EF4444', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
   notifBadgeText: { color: colors.white, fontSize: 9, fontWeight: '700' },

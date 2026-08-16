@@ -2,7 +2,7 @@
 // SCR-TC-002: Live Session Monitoring
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Modal, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
@@ -76,14 +76,19 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
   const [stationFilter, setStationFilter] = useState('All');
   const [alertTarget, setAlertTarget] = useState<LiveSession | null>(null);
   const [exportContent, setExportContent] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const load = useCallback(async () => {
+    setRefreshing(true);
     try {
       const { data } = await getActiveSessions({ status: statusFilter, station: stationFilter });
       setSessions(data);
     } catch (err) {
       setSessions(DEMO_SESSIONS);
     }
+    setLastUpdated(new Date());
+    setRefreshing(false);
   }, [statusFilter, stationFilter]);
 
   useEffect(() => {
@@ -91,6 +96,10 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
     const interval = setInterval(load, 30000); // auto-refresh every 30s per spec
     return () => clearInterval(interval);
   }, [load]);
+
+  const lastUpdatedStr = lastUpdated
+    ? lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : '—';
 
   const filtered = sessions.filter(
     (s) => (statusFilter === 'All' || s.status === statusFilter) && (stationFilter === 'All' || s.stationName === stationFilter)
@@ -137,12 +146,28 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
       <View style={styles.header}>
         <Text style={typography.h1}>Live Session Monitoring</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.refreshBtn} onPress={load}>
-            <Feather name="refresh-cw" size={14} color={colors.navyText} />
+          <TouchableOpacity style={styles.refreshBtn} onPress={load} disabled={refreshing}>
+            {refreshing ? (
+              <ActivityIndicator size="small" color={colors.navyText} />
+            ) : (
+              <Feather name="refresh-cw" size={14} color={colors.navyText} />
+            )}
+            <Text style={styles.refreshBtnText}>{refreshing ? 'Refreshing' : 'Refresh'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.exportBtn} onPress={handleExport}>
             <Text style={styles.exportBtnText}>Export Log</Text>
           </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.infoRow}>
+        <View style={styles.infoPill}>
+          <Feather name="activity" size={12} color={colors.statusInProgressText} />
+          <Text style={styles.infoText}>Auto-refresh every 30s</Text>
+        </View>
+        <View style={styles.infoPill}>
+          <Feather name="clock" size={12} color={colors.mutedText} />
+          <Text style={styles.infoText}>Last updated {lastUpdatedStr}</Text>
         </View>
       </View>
 
@@ -166,7 +191,10 @@ export default function LiveSessionMonitoringScreen({ navigation }: NativeStackS
         </ScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
+      >
         {filtered.map((s) => (
           <View key={s.id} style={styles.sessionCard}>
             <View style={styles.sessionCardHeader}>
@@ -228,7 +256,11 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   headerActions: { flexDirection: 'row', gap: spacing.sm },
-  refreshBtn: { width: 32, height: 32, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  refreshBtnText: { fontWeight: '600', fontSize: 12, color: colors.navyText },
+  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
+  infoPill: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.bgApp, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  infoText: { fontSize: 11, fontWeight: '600', color: colors.mutedText },
   exportBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   exportBtnText: { fontWeight: '600', fontSize: 12, color: colors.navyText },
   filterRow: { padding: spacing.md, backgroundColor: colors.bgCard },
