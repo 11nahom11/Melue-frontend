@@ -15,6 +15,17 @@ export const SYS_ROUTE_BY_TAB: Record<string, keyof SystemAdminStackParamList> =
   Roles: 'RoleManagement',
   Permissions: 'PermissionConfiguration',
   'Audit Log': 'AuditLog',
+  // Clinical shortcuts
+  Forms: 'FormBuilder',
+  'Trial Logging': 'TrialLoggingFormat',
+  'ABC Lists': 'AbcDropdownLists',
+  Schedule: 'ScheduleCapacityConfig',
+  'Goal Domains': 'GoalDomainDefinitions',
+  'Task Analysis': 'TaskAnalysisTemplates',
+  Programs: 'ClinicalCategoriesConfig',
+  'Clinic Info': 'ClinicInfoConfig',
+  'Working Hours': 'WorkingHoursConfig',
+  Schools: 'SchoolSettingsConfig',
 };
 
 interface SystemAdminNavProps {

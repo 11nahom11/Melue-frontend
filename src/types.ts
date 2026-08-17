@@ -191,6 +191,17 @@ export type SystemAdminStackParamList = {
   RoleManagement: undefined;
   PermissionConfiguration: undefined;
   AuditLog: undefined;
+  // Clinical configuration (same screens as InstitutionalAdminStack)
+  FormBuilder: undefined;
+  TrialLoggingFormat: undefined;
+  AbcDropdownLists: undefined;
+  ScheduleCapacityConfig: undefined;
+  GoalDomainDefinitions: undefined;
+  TaskAnalysisTemplates: undefined;
+  ClinicalCategoriesConfig: undefined;
+  ClinicInfoConfig: undefined;
+  WorkingHoursConfig: undefined;
+  SchoolSettingsConfig: undefined;
 };
 
 export type ParentStackParamList = {
