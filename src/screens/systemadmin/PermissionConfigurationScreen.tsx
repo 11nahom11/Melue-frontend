@@ -7,6 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import SystemAdminNav, { SYS_ROUTE_BY_TAB } from './components/SystemAdminNav';
+import SystemAdminSidebar from './components/SystemAdminSidebar';
 import { getRoles, getPermissionMatrix, savePermissionMatrix, getPermissionAuditTrail } from '../../api/systemAdminApi';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SystemAdminStackParamList } from '../../types';
@@ -80,9 +81,12 @@ export default function PermissionConfigurationScreen({ navigation }: NativeStac
   return (
     <SafeAreaView style={styles.safe}>
       <SystemAdminNav activeTab="Permissions" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}><Text style={typography.h1}>Permission Configuration</Text></View>
+      <View style={styles.body}>
+        <SystemAdminSidebar activeRoute="PermissionConfiguration" onNavigate={(r) => navigation?.navigate?.(r)} />
+        <View style={styles.contentArea}>
+          <View style={styles.header}><Text style={typography.h1}>Permission Configuration</Text></View>
 
-      <View style={styles.roleSelectorRow}>
+          <View style={styles.roleSelectorRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {roles.map((r) => (
             <TouchableOpacity key={r.id} style={[styles.roleChip, selectedRoleId === r.id && styles.roleChipActive]} onPress={() => setSelectedRoleId(r.id)}>
@@ -128,6 +132,8 @@ export default function PermissionConfigurationScreen({ navigation }: NativeStac
           <Text style={styles.saveConfigBtnText}>Save Permissions</Text>
         </TouchableOpacity>
       </View>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -150,6 +156,8 @@ const DEMO_AUDIT: AuditEntry[] = [
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   roleSelectorRow: { padding: spacing.md, backgroundColor: colors.bgCard },
   roleChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.bgApp, marginRight: spacing.sm },

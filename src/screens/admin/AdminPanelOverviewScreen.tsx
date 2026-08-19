@@ -14,7 +14,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from '../institutionaladmin/components/InstitutionalAdminNav';
+import InstitutionalAdminSidebar from '../institutionaladmin/components/InstitutionalAdminSidebar';
 import SystemAdminNav, { SYS_ROUTE_BY_TAB } from '../systemadmin/components/SystemAdminNav';
+import SystemAdminSidebar from '../systemadmin/components/SystemAdminSidebar';
 
 interface ModuleItem {
   key: string;
@@ -84,55 +86,67 @@ export default function AdminPanelOverviewScreen({ navigation, route }: Props) {
         <InstitutionalAdminNav activeTab="Admin Panel" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t] as never)} />
       )}
 
-      <View style={styles.header}>
-        <Feather name="settings" size={18} color={colors.navyText} />
-        <View>
-          <Text style={typography.h1}>Administration Panel</Text>
-          <Text style={typography.caption}>SCR-ADMIN-000 — Overview</Text>
+      <View style={styles.body}>
+        {panel === 'system' ? (
+          <SystemAdminSidebar activeRoute="AdminPanelOverview" onNavigate={(route) => navigation?.navigate?.(route as never)} />
+        ) : (
+          <InstitutionalAdminSidebar activeRoute="AdminPanelOverview" onNavigate={(route) => navigation?.navigate?.(route as never)} />
+        )}
+
+        <View style={styles.contentArea}>
+          <View style={styles.header}>
+            <Feather name="settings" size={18} color={colors.navyText} />
+            <View>
+              <Text style={typography.h1}>Administration Panel</Text>
+              <Text style={typography.caption}>SCR-ADMIN-000 — Overview</Text>
+            </View>
+          </View>
+
+          <View style={styles.tabsRow}>
+            <TouchableOpacity style={[styles.tab, panel === 'clinical' && styles.tabActive]} onPress={() => setPanel('clinical')}>
+              <Feather name="clipboard" size={14} color={panel === 'clinical' ? colors.navyText : colors.bodyText} />
+              <Text style={[styles.tabText, panel === 'clinical' && styles.tabTextActive]}>Clinical Configuration</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.tab, panel === 'system' && styles.tabActive]} onPress={() => setPanel('system')}>
+              <Feather name="users" size={14} color={panel === 'system' ? colors.navyText : colors.bodyText} />
+              <Text style={[styles.tabText, panel === 'system' && styles.tabTextActive]}>System Configuration</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            {panel === 'clinical' ? (
+              <>
+                <Text style={typography.body}>
+                  Clinical configuration for the {CLINICAL_MODULES.length} institutional modules. Changes take effect immediately in the live application.
+                </Text>
+                <ModuleGrid modules={CLINICAL_MODULES} onOpen={openModule} />
+              </>
+            ) : (
+              <>
+                <Text style={typography.body}>
+                  System and user configuration for the {SYSTEM_MODULES.length} administration modules.
+                </Text>
+                <ModuleGrid modules={SYSTEM_MODULES} onOpen={openModule} />
+              </>
+            )}
+          </ScrollView>
         </View>
       </View>
-
-      <View style={styles.tabsRow}>
-        <TouchableOpacity style={[styles.tab, panel === 'clinical' && styles.tabActive]} onPress={() => setPanel('clinical')}>
-          <Feather name="clipboard" size={14} color={panel === 'clinical' ? colors.navyText : colors.bodyText} />
-          <Text style={[styles.tabText, panel === 'clinical' && styles.tabTextActive]}>Clinical Configuration</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, panel === 'system' && styles.tabActive]} onPress={() => setPanel('system')}>
-          <Feather name="users" size={14} color={panel === 'system' ? colors.navyText : colors.bodyText} />
-          <Text style={[styles.tabText, panel === 'system' && styles.tabTextActive]}>System Configuration</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {panel === 'clinical' ? (
-          <>
-            <Text style={typography.body}>
-              Clinical configuration for the {CLINICAL_MODULES.length} institutional modules. Changes take effect immediately in the live application.
-            </Text>
-            <ModuleGrid modules={CLINICAL_MODULES} onOpen={openModule} />
-          </>
-        ) : (
-          <>
-            <Text style={typography.body}>
-              System and user configuration for the {SYSTEM_MODULES.length} administration modules.
-            </Text>
-            <ModuleGrid modules={SYSTEM_MODULES} onOpen={openModule} />
-          </>
-        )}
-      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   tabsRow: { flexDirection: 'row', gap: spacing.sm, padding: spacing.md, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingVertical: spacing.sm },
   tabActive: { backgroundColor: colors.primaryYellow, borderColor: colors.primaryYellow },
   tabText: { fontSize: 13, fontWeight: '600', color: colors.bodyText },
   tabTextActive: { color: colors.navyText, fontWeight: '700' },
-  content: { padding: spacing.lg, gap: spacing.lg },
+  scrollContent: { padding: spacing.lg, gap: spacing.lg },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   moduleCard: { width: '48%', backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.xs, minHeight: 170 },
   moduleIconWrap: { width: 34, height: 34, borderRadius: radius.md, backgroundColor: colors.statusPendingBg, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },

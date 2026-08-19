@@ -8,6 +8,7 @@ import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import StatusPill from '../../components/StatusPill';
 import SystemAdminNav, { SYS_ROUTE_BY_TAB } from './components/SystemAdminNav';
+import SystemAdminSidebar from './components/SystemAdminSidebar';
 import { getStaffAccounts, createStaffAccount, updateStaffAccount, deleteStaffAccount, resetStaffPassword, toggleStaffActive, bulkStaffAction } from '../../api/systemAdminApi';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SystemAdminStackParamList } from '../../types';
@@ -350,7 +351,10 @@ export default function StaffAccountManagementScreen({ navigation }: NativeStack
   return (
     <SafeAreaView style={styles.safe}>
       <SystemAdminNav activeTab="Staff Accounts" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}>
+      <View style={styles.body}>
+        <SystemAdminSidebar activeRoute="StaffAccountManagement" onNavigate={(r) => navigation?.navigate?.(r)} />
+        <View style={styles.contentArea}>
+          <View style={styles.header}>
         <Text style={typography.h1}>Staff Account Management</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setFormTarget(null)}>
           <Feather name="plus" size={14} color={colors.navyText} />
@@ -407,6 +411,8 @@ export default function StaffAccountManagementScreen({ navigation }: NativeStack
         ))}
         {linkTarget && <TeacherLinkingPanel teacher={linkTarget} onClose={() => setLinkTarget(null)} />}
       </ScrollView>
+        </View>
+      </View>
 
       <StaffFormModal visible={formTarget !== undefined} staff={formTarget} onClose={() => setFormTarget(undefined)} onSave={handleSave} />
     </SafeAreaView>
@@ -421,6 +427,8 @@ const DEMO_STAFF: StaffMember[] = [
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   addBtn: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   addBtnText: { fontWeight: '700', color: colors.navyText, fontSize: 12 },

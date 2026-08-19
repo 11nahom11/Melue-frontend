@@ -7,6 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import SystemAdminNav, { SYS_ROUTE_BY_TAB } from './components/SystemAdminNav';
+import SystemAdminSidebar from './components/SystemAdminSidebar';
 import { getRoles, createRole, updateRole, deleteRole } from '../../api/systemAdminApi';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SystemAdminStackParamList } from '../../types';
@@ -99,15 +100,18 @@ export default function RoleManagementScreen({ navigation }: NativeStackScreenPr
   return (
     <SafeAreaView style={styles.safe}>
       <SystemAdminNav activeTab="Roles" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}>
-        <Text style={typography.h1}>Role Management</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setFormTarget(null)}>
-          <Feather name="plus" size={14} color={colors.navyText} />
-          <Text style={styles.addBtnText}>Add Role</Text>
-        </TouchableOpacity>
-      </View>
+      <View style={styles.body}>
+        <SystemAdminSidebar activeRoute="RoleManagement" onNavigate={(r) => navigation?.navigate?.(r)} />
+        <View style={styles.contentArea}>
+          <View style={styles.header}>
+            <Text style={typography.h1}>Role Management</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={() => setFormTarget(null)}>
+              <Feather name="plus" size={14} color={colors.navyText} />
+              <Text style={styles.addBtnText}>Add Role</Text>
+            </TouchableOpacity>
+          </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+          <ScrollView contentContainerStyle={styles.content}>
         {roles.map((r) => (
           <View key={r.id} style={styles.row}>
             <View style={{ flex: 1 }}>
@@ -125,6 +129,8 @@ export default function RoleManagementScreen({ navigation }: NativeStackScreenPr
           </View>
         ))}
       </ScrollView>
+        </View>
+      </View>
 
       <RoleFormModal visible={formTarget !== undefined} role={formTarget} onClose={() => setFormTarget(undefined)} onSave={handleSave} />
     </SafeAreaView>
@@ -139,6 +145,8 @@ const DEMO_ROLES: RoleRecord[] = [
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   addBtn: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   addBtnText: { fontWeight: '700', color: colors.navyText, fontSize: 12 },

@@ -172,6 +172,7 @@ export type ProgramDirectorStackParamList = {
 };
 
 export type InstitutionalAdminStackParamList = {
+  InstitutionalAdminOverview: undefined;
   AdminPanelOverview: { panel?: 'clinical' | 'system' } | undefined;
   FormBuilder: undefined;
   TrialLoggingFormat: undefined;
@@ -186,6 +187,7 @@ export type InstitutionalAdminStackParamList = {
 };
 
 export type SystemAdminStackParamList = {
+  SystemAdminOverview: undefined;
   AdminPanelOverview: { panel?: 'clinical' | 'system' } | undefined;
   StaffAccountManagement: undefined;
   RoleManagement: undefined;

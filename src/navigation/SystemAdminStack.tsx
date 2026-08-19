@@ -6,6 +6,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { SystemAdminStackParamList } from '../types';
 import AdminPanelOverviewScreen from '../screens/admin/AdminPanelOverviewScreen';
+import SystemAdminOverviewScreen from '../screens/systemadmin/SystemAdminOverviewScreen';
 import StaffAccountManagementScreen from '../screens/systemadmin/StaffAccountManagementScreen';
 import RoleManagementScreen from '../screens/systemadmin/RoleManagementScreen';
 import PermissionConfigurationScreen from '../screens/systemadmin/PermissionConfigurationScreen';
@@ -26,6 +27,7 @@ const Stack = createNativeStackNavigator<SystemAdminStackParamList>();
 export default function SystemAdminStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="SystemAdminOverview" component={SystemAdminOverviewScreen} />
       <Stack.Screen name="AdminPanelOverview" component={AdminPanelOverviewScreen} initialParams={{ panel: 'system' }} />
       {/* System screens */}
       <Stack.Screen name="StaffAccountManagement" component={StaffAccountManagementScreen} />
