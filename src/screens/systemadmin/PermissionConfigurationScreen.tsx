@@ -1,82 +1,112 @@
-// screens/systemadmin/PermissionConfigurationScreen.js
-// SCR-SYS-003: Permission Configuration (RBAC Matrix)
-
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import SystemAdminNav from './components/SystemAdminNav';
 import SystemAdminSidebar from './components/SystemAdminSidebar';
-import { getRoles, getPermissionMatrix, savePermissionMatrix, getPermissionAuditTrail } from '../../api/systemAdminApi';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SystemAdminStackParamList } from '../../types';
 
-const RESOURCES = [
-  'Student Records', 'Assessments', 'IUP', 'Goal Bank', 'Session Data',
-  'Attendance', 'Scheduling', 'Parent Communication', 'Reports', 'Staff Accounts',
-];
+const MODULES = ['Students / Enrollment', 'Assessments', 'IUP & Goals', 'Active Therapy', 'Reports', 'Staff', 'Admin'];
 const ACTIONS = ['View', 'Create', 'Edit', 'Delete', 'Approve'];
 
-interface PermissionRole {
-  id: string;
-  name: string;
-  isSystemRole: boolean;
-}
-
-type PermissionMatrix = Record<string, Record<string, boolean>>;
-
-interface AuditEntry {
-  date: string;
-  user: string;
-  resource: string;
-  action: string;
-  roleName: string;
-}
+const DEFAULT_MATRIX: Record<string, Record<string, Record<string, boolean>>> = {
+  teacher: {
+    'Students / Enrollment': { View: true, Create: false, Edit: false, Delete: false, Approve: false },
+    Assessments: { View: true, Create: true, Edit: true, Delete: false, Approve: false },
+    'IUP & Goals': { View: true, Create: false, Edit: false, Delete: false, Approve: false },
+    'Active Therapy': { View: true, Create: true, Edit: true, Delete: false, Approve: false },
+    Reports: { View: true, Create: false, Edit: false, Delete: false, Approve: false },
+    Staff: { View: false, Create: false, Edit: false, Delete: false, Approve: false },
+    Admin: { View: false, Create: false, Edit: false, Delete: false, Approve: false },
+  },
+  coordinator: {
+    'Students / Enrollment': { View: true, Create: true, Edit: true, Delete: false, Approve: false },
+    Assessments: { View: true, Create: true, Edit: true, Delete: false, Approve: true },
+    'IUP & Goals': { View: true, Create: true, Edit: true, Delete: false, Approve: false },
+    'Active Therapy': { View: true, Create: true, Edit: true, Delete: false, Approve: false },
+    Reports: { View: true, Create: true, Edit: false, Delete: false, Approve: false },
+    Staff: { View: true, Create: false, Edit: false, Delete: false, Approve: false },
+    Admin: { View: false, Create: false, Edit: false, Delete: false, Approve: false },
+  },
+  director: {
+    'Students / Enrollment': { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    Assessments: { View: true, Create: true, Edit: true, Delete: false, Approve: true },
+    'IUP & Goals': { View: true, Create: true, Edit: true, Delete: false, Approve: true },
+    'Active Therapy': { View: true, Create: true, Edit: true, Delete: false, Approve: true },
+    Reports: { View: true, Create: true, Edit: true, Delete: false, Approve: true },
+    Staff: { View: true, Create: false, Edit: false, Delete: false, Approve: false },
+    Admin: { View: false, Create: false, Edit: false, Delete: false, Approve: false },
+  },
+  institutional_admin: {
+    'Students / Enrollment': { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    Assessments: { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    'IUP & Goals': { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    'Active Therapy': { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    Reports: { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    Staff: { View: true, Create: true, Edit: true, Delete: false, Approve: true },
+    Admin: { View: true, Create: true, Edit: true, Delete: false, Approve: false },
+  },
+  sysadmin: {
+    'Students / Enrollment': { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    Assessments: { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    'IUP & Goals': { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    'Active Therapy': { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    Reports: { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    Staff: { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+    Admin: { View: true, Create: true, Edit: true, Delete: true, Approve: true },
+  },
+};
 
 export default function PermissionConfigurationScreen({ navigation }: NativeStackScreenProps<SystemAdminStackParamList, 'PermissionConfiguration'>) {
-  const [roles, setRoles] = useState<PermissionRole[]>([]);
-  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
-  const [matrix, setMatrix] = useState<PermissionMatrix>({});
-  const [auditTrail, setAuditTrail] = useState<AuditEntry[]>([]);
-  const [dirty, setDirty] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('teacher');
+  const [permMatrix, setPermMatrix] = useState(DEFAULT_MATRIX);
 
-  const loadRoles = useCallback(async () => {
-    try {
-      const { data } = await getRoles();
-      setRoles(data);
-      if (!selectedRoleId && data.length) setSelectedRoleId(data[0].id);
-    } catch (err) {
-      setRoles(DEMO_ROLES);
-      if (!selectedRoleId) setSelectedRoleId(DEMO_ROLES[0].id);
-    }
-  }, [selectedRoleId]);
+  const currentPerms = permMatrix[selectedRole] ?? {};
 
-  useEffect(() => { loadRoles(); }, [loadRoles]);
-
-  useEffect(() => {
-    if (!selectedRoleId) return;
-    getPermissionMatrix(selectedRoleId).then(({ data }) => { setMatrix(data); setDirty(false); }).catch(() => { setMatrix(DEFAULT_MATRIX(selectedRoleId)); setDirty(false); });
-    getPermissionAuditTrail(selectedRoleId).then(({ data }) => setAuditTrail(data)).catch(() => setAuditTrail(DEMO_AUDIT));
-  }, [selectedRoleId]);
-
-  const toggle = (resource: string, action: string) => {
-    setMatrix((prev) => ({
-      ...prev,
-      [resource]: { ...prev[resource], [action]: !prev[resource]?.[action] },
+  const togglePerm = (module: string, action: string) => {
+    setPermMatrix((m) => ({
+      ...m,
+      [selectedRole]: {
+        ...m[selectedRole],
+        [module]: { ...m[selectedRole]?.[module], [action]: !m[selectedRole]?.[module]?.[action] },
+      },
     }));
-    setDirty(true);
   };
 
-  const isSystemRole = roles.find((r) => r.id === selectedRoleId)?.isSystemRole;
-
-  const handleSave = async () => {
-    if (!selectedRoleId) return;
-    if (isSystemRole) { Alert.alert('System roles have fixed base permissions', 'Some changes may not persist for built-in roles.'); }
-    try { await savePermissionMatrix(selectedRoleId, matrix); } catch (err) {}
-    setDirty(false);
-    Alert.alert('Permissions saved');
+  const setAllForModule = (module: string, val: boolean) => {
+    setPermMatrix((m) => {
+      const updated = { ...(m[selectedRole] ?? {}) };
+      updated[module] = { View: val, Create: val, Edit: val, Delete: val, Approve: val };
+      return { ...m, [selectedRole]: updated };
+    });
   };
+
+  const setAllForAction = (action: string, val: boolean) => {
+    setPermMatrix((m) => {
+      const updated = { ...(m[selectedRole] ?? {}) };
+      MODULES.forEach((mod) => { updated[mod] = { ...updated[mod], [action]: val }; });
+      return { ...m, [selectedRole]: updated };
+    });
+  };
+
+  const setPreset = (preset: 'full' | 'readonly') => {
+    setPermMatrix((m) => {
+      const updated: Record<string, Record<string, boolean>> = {};
+      MODULES.forEach((mod) => {
+        updated[mod] = {};
+        ACTIONS.forEach((act) => { updated[mod][act] = preset === 'full' || act === 'View'; });
+      });
+      return { ...m, [selectedRole]: updated };
+    });
+  };
+
+  const permSummary = MODULES.map((mod) => {
+    const allowed = ACTIONS.filter((a) => currentPerms[mod]?.[a]);
+    if (!allowed.length) return null;
+    return `Can ${allowed.join(', ').toLowerCase()} ${mod}`;
+  }).filter(Boolean);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -84,94 +114,132 @@ export default function PermissionConfigurationScreen({ navigation }: NativeStac
       <View style={styles.body}>
         <SystemAdminSidebar activeRoute="PermissionConfiguration" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="SYSTEM CONFIGURATION" />
         <View style={styles.contentArea}>
-          <View style={styles.header}><Text style={typography.h1}>Permission Configuration</Text></View>
-
-          <View style={styles.roleSelectorRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {roles.map((r) => (
-            <TouchableOpacity key={r.id} style={[styles.roleChip, selectedRoleId === r.id && styles.roleChipActive]} onPress={() => setSelectedRoleId(r.id)}>
-              <Text style={[typography.bodyBold, selectedRoleId === r.id && { color: colors.navyText }]}>{r.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        <ScrollView horizontal>
-          <View>
-            <View style={styles.matrixHeaderRow}>
-              <View style={styles.resourceCol}><Text style={typography.label}>Resource</Text></View>
-              {ACTIONS.map((a) => (
-                <View key={a} style={styles.actionCol}><Text style={typography.label}>{a}</Text></View>
-              ))}
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.headerLeft}>
+              <Text style={typography.h1}>Permission Configuration</Text>
+              <Text style={typography.caption}>SCR-SYS-003 · Define module access permissions per role</Text>
             </View>
-            {RESOURCES.map((res) => (
-              <View key={res} style={styles.matrixRow}>
-                <View style={styles.resourceCol}><Text style={typography.body}>{res}</Text></View>
-                {ACTIONS.map((a) => (
-                  <TouchableOpacity key={a} style={styles.actionCol} onPress={() => toggle(res, a)}>
-                    <View style={[styles.checkbox, matrix[res]?.[a] && styles.checkboxChecked]} />
+
+            {/* Role Selector + Presets */}
+            <View style={styles.controlsRow}>
+              <View style={styles.roleChips}>
+                {Object.keys(DEFAULT_MATRIX).map((r) => (
+                  <TouchableOpacity key={r} style={[styles.roleChip, selectedRole === r && styles.roleChipActive]} onPress={() => setSelectedRole(r)}>
+                    <Text style={[styles.roleChipText, selectedRole === r && styles.roleChipTextActive]}>{r.replace(/_/g, ' ')}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
-            ))}
-          </View>
-        </ScrollView>
+              <View style={styles.presetRow}>
+                <TouchableOpacity style={styles.presetBtn} onPress={() => setPreset('full')}><Text style={styles.presetBtnText}>Full Access</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.presetBtn} onPress={() => setPreset('readonly')}><Text style={styles.presetBtnText}>Read Only</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.presetBtn}>
+                  <Feather name="copy" size={13} color={colors.bodyText} />
+                  <Text style={styles.presetBtnText}>Copy from Role...</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
-        <View style={styles.card}>
-          <Text style={typography.h3}>Audit Trail</Text>
-          {auditTrail.map((a, i) => (
-            <Text key={i} style={typography.caption}>{a.date} — {a.user} changed {a.resource}/{a.action} for {a.roleName}</Text>
-          ))}
-          {auditTrail.length === 0 && <Text style={typography.caption}>No changes recorded.</Text>}
-        </View>
-      </ScrollView>
+            {/* Permission Matrix */}
+            <View style={styles.matrixCard}>
+              <View style={styles.matrixHeader}>
+                <Text style={[styles.matrixTh, { flex: 2 }]}>Module</Text>
+                {ACTIONS.map((action) => (
+                  <View key={action} style={[styles.matrixTh, { flex: 1, alignItems: 'center' }]}>
+                    <Text style={styles.matrixThText}>{action}</Text>
+                    <TouchableOpacity onPress={() => {
+                      const allOn = MODULES.every((mod) => currentPerms[mod]?.[action]);
+                      setAllForAction(action, !allOn);
+                    }}>
+                      <Feather name="check-square" size={12} color={colors.skyAccent} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <Text style={[styles.matrixTh, { flex: 0.7, textAlign: 'center' }]}>All</Text>
+              </View>
+              {MODULES.map((module) => {
+                const allOn = ACTIONS.every((a) => currentPerms[module]?.[a]);
+                return (
+                  <View key={module} style={styles.matrixRow}>
+                    <Text style={[styles.matrixModuleText, { flex: 2 }]}>{module}</Text>
+                    {ACTIONS.map((action) => (
+                      <TouchableOpacity key={action} style={[styles.matrixTd, { flex: 1 }]} onPress={() => togglePerm(module, action)}>
+                        <View style={[styles.checkbox, currentPerms[module]?.[action] && styles.checkboxOn]} />
+                      </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity style={[styles.matrixTd, { flex: 0.7 }]} onPress={() => setAllForModule(module, !allOn)}>
+                      <Feather name="check-square" size={14} color={allOn ? colors.skyAccent : colors.border} />
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={[styles.saveConfigBtn, !dirty && styles.saveConfigBtnDisabled]} disabled={!dirty} onPress={handleSave}>
-          <Text style={styles.saveConfigBtnText}>Save Permissions</Text>
-        </TouchableOpacity>
-      </View>
+            {/* Live Preview */}
+            <View style={styles.previewCard}>
+              <Text style={styles.previewTitle}>Permission Summary — {selectedRole}</Text>
+              {permSummary.length > 0 ? (
+                <View style={styles.previewList}>
+                  {permSummary.map((s, i) => (
+                    <View key={i} style={styles.previewItem}>
+                      <Feather name="check" size={14} color={colors.success} />
+                      <Text style={styles.previewItemText}>{s}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.previewEmpty}>No permissions configured for this role.</Text>
+              )}
+            </View>
+
+            <View style={styles.bottomRow}>
+              <TouchableOpacity style={styles.saveBtn} onPress={() => Alert.alert('Permissions saved')}>
+                <Feather name="save" size={14} color={colors.navyText} />
+                <Text style={styles.saveBtnText}>Save Configuration</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.auditLink}>
+                <Text style={styles.auditLinkText}>View Audit Trail</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </View>
     </SafeAreaView>
   );
 }
 
-const DEMO_ROLES: PermissionRole[] = [
-  { id: 'r1', name: 'Teacher', isSystemRole: true },
-  { id: 'r2', name: 'Coordinator', isSystemRole: true },
-  { id: 'r3', name: 'Program Director', isSystemRole: true },
-];
-
-function DEFAULT_MATRIX(roleId: string): PermissionMatrix {
-  const base: PermissionMatrix = {};
-  RESOURCES.forEach((r) => { base[r] = { View: true, Create: false, Edit: false, Delete: false, Approve: false }; });
-  if (roleId === 'r1') { base['Session Data'] = { View: true, Create: true, Edit: true, Delete: false, Approve: false }; }
-  return base;
-}
-const DEMO_AUDIT: AuditEntry[] = [
-  { date: 'Aug 5, 2026', user: 'Sysadmin A', resource: 'Reports', action: 'Approve', roleName: 'Coordinator' },
-];
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  header: { padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
-  roleSelectorRow: { padding: spacing.md, backgroundColor: colors.bgCard },
-  roleChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.bgApp, marginRight: spacing.sm },
-  roleChipActive: { backgroundColor: colors.primaryYellow },
-  content: { padding: spacing.lg, gap: spacing.lg },
-  matrixHeaderRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: spacing.sm },
-  matrixRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
-  resourceCol: { width: 150, justifyContent: 'center' },
-  actionCol: { width: 70, alignItems: 'center', justifyContent: 'center' },
-  checkbox: { width: 20, height: 20, borderWidth: 1, borderColor: colors.border, borderRadius: 4 },
-  checkboxChecked: { backgroundColor: colors.primaryYellow, borderColor: colors.primaryYellow },
-  card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
-  footer: { padding: spacing.lg, backgroundColor: colors.bgCard, borderTopWidth: 1, borderTopColor: colors.border },
-  saveConfigBtn: { backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
-  saveConfigBtnDisabled: { opacity: 0.4 },
-  saveConfigBtnText: { fontWeight: '700', color: colors.navyText },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  headerLeft: { gap: 2 },
+  controlsRow: { gap: spacing.sm },
+  roleChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  roleChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard },
+  roleChipActive: { backgroundColor: colors.primaryYellow, borderColor: colors.primaryYellow },
+  roleChipText: { fontSize: 12, fontWeight: '600', color: colors.bodyText },
+  roleChipTextActive: { color: colors.navyText },
+  presetRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  presetBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard },
+  presetBtnText: { fontSize: 12, fontWeight: '600', color: colors.bodyText },
+  matrixCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, overflow: 'hidden' },
+  matrixHeader: { flexDirection: 'row', backgroundColor: colors.bgTableHeader, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
+  matrixTh: { paddingHorizontal: spacing.xs },
+  matrixThText: { fontSize: 10, fontWeight: '700', color: colors.mutedText, textTransform: 'uppercase', letterSpacing: 0.5 },
+  matrixRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  matrixModuleText: { fontSize: 13, fontWeight: '600', color: colors.navyText },
+  matrixTd: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xs },
+  checkbox: { width: 18, height: 18, borderWidth: 1, borderColor: colors.border, borderRadius: 4 },
+  checkboxOn: { backgroundColor: colors.skyAccent, borderColor: colors.skyAccent },
+  previewCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, backgroundColor: '#F9FAFB', gap: spacing.sm },
+  previewTitle: { fontSize: 10, fontWeight: '700', color: colors.mutedText, textTransform: 'uppercase', letterSpacing: 1 },
+  previewList: { gap: spacing.xs },
+  previewItem: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  previewItemText: { fontSize: 13, color: colors.navyText },
+  previewEmpty: { fontSize: 13, color: colors.mutedText, fontStyle: 'italic' },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2 },
+  saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
+  auditLink: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  auditLinkText: { fontSize: 13, fontWeight: '600', color: colors.skyDark, textDecorationLine: 'underline' },
 });

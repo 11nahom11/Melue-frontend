@@ -1,8 +1,6 @@
-// screens/institutionaladmin/ScheduleCapacityConfigScreen.js
-// SCR-ADMIN-004: Session Schedule & Capacity Configuration
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
@@ -14,43 +12,47 @@ import type { InstitutionalAdminStackParamList } from '../../types';
 interface ScheduleBlock {
   id: string;
   name: string;
-  startTime: string;
-  endTime: string;
+  start: string;
+  end: string;
 }
 
+const DEMO_BLOCKS: ScheduleBlock[] = [
+  { id: '1', name: 'Morning Block', start: '08:07', end: '10:30' },
+  { id: '2', name: 'Afternoon Block', start: '13:10', end: '15:30' },
+];
+
 export default function ScheduleCapacityConfigScreen({ navigation }: NativeStackScreenProps<InstitutionalAdminStackParamList, 'ScheduleCapacityConfig'>) {
-  const [morningStart, setMorningStart] = useState('8:07 AM');
-  const [morningEnd, setMorningEnd] = useState('12:00 PM');
-  const [afternoonStart, setAfternoonStart] = useState('1:10 PM');
-  const [afternoonEnd, setAfternoonEnd] = useState('5:00 PM');
-  const [preTherapyDuration, setPreTherapyDuration] = useState('30');
-  const [capacity, setCapacity] = useState('6');
+  const [scheduleOpen, setScheduleOpen] = useState(true);
+  const [morningStart, setMorningStart] = useState('08:07');
+  const [morningEnd, setMorningEnd] = useState('10:30');
+  const [afternoonStart, setAfternoonStart] = useState('13:10');
+  const [afternoonEnd, setAfternoonEnd] = useState('15:30');
+  const [preTherapy, setPreTherapy] = useState('30');
+  const [capacity, setCapacity] = useState('2');
   const [draftExpiry, setDraftExpiry] = useState('7');
-  const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
+  const [blocks, setBlocks] = useState<ScheduleBlock[]>(DEMO_BLOCKS);
 
   const load = useCallback(async () => {
     try {
       const { data } = await getScheduleCapacityConfig();
       setMorningStart(data.morningStart); setMorningEnd(data.morningEnd);
       setAfternoonStart(data.afternoonStart); setAfternoonEnd(data.afternoonEnd);
-      setPreTherapyDuration(String(data.preTherapyDuration));
+      setPreTherapy(String(data.preTherapyDuration));
       setCapacity(String(data.capacity)); setDraftExpiry(String(data.draftExpiry));
       setBlocks(data.blocks);
-    } catch (err) {
-      setBlocks(DEMO_BLOCKS);
-    }
+    } catch {}
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  const updateBlock = (id: string, field: 'start' | 'end', value: string) => {
+    setBlocks((bs) => bs.map((b) => (b.id === id ? { ...b, [field]: value } : b)));
+  };
+
   const handleSave = async () => {
-    const cap = Number(capacity);
-    const expiry = Number(draftExpiry);
-    if (cap < 1) { Alert.alert('Capacity must be at least 1'); return; }
-    if (expiry < 1 || expiry > 30) { Alert.alert('Draft expiry must be 1-30 days'); return; }
     try {
-      await saveScheduleCapacityConfig({ morningStart, morningEnd, afternoonStart, afternoonEnd, preTherapyDuration: Number(preTherapyDuration), capacity: cap, draftExpiry: expiry, blocks });
-    } catch (err) {}
+      await saveScheduleCapacityConfig({ morningStart, morningEnd, afternoonStart, afternoonEnd, preTherapyDuration: Number(preTherapy), capacity: Number(capacity), draftExpiry: Number(draftExpiry), blocks });
+    } catch {}
     Alert.alert('Configuration saved');
   };
 
@@ -60,66 +62,114 @@ export default function ScheduleCapacityConfigScreen({ navigation }: NativeStack
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="ScheduleCapacityConfig" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>
-          <View style={styles.header}><Text style={typography.h1}>Session Schedule & Capacity</Text></View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.card}>
-          <Text style={typography.h3}>Session Schedule</Text>
-          <View style={styles.row2}>
-            <View style={[styles.field, { flex: 1 }]}><Text style={typography.label}>Morning Round Start</Text><TextInput style={styles.textInput} value={morningStart} onChangeText={setMorningStart} /></View>
-            <View style={[styles.field, { flex: 1 }]}><Text style={typography.label}>Morning Round End</Text><TextInput style={styles.textInput} value={morningEnd} onChangeText={setMorningEnd} /></View>
-          </View>
-          <View style={styles.row2}>
-            <View style={[styles.field, { flex: 1 }]}><Text style={typography.label}>Afternoon Round Start</Text><TextInput style={styles.textInput} value={afternoonStart} onChangeText={setAfternoonStart} /></View>
-            <View style={[styles.field, { flex: 1 }]}><Text style={typography.label}>Afternoon Round End</Text><TextInput style={styles.textInput} value={afternoonEnd} onChangeText={setAfternoonEnd} /></View>
-          </View>
-          <View style={styles.field}><Text style={typography.label}>Pre-Therapy Duration (minutes)</Text><TextInput style={styles.textInput} value={preTherapyDuration} onChangeText={setPreTherapyDuration} keyboardType="number-pad" /></View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={typography.h3}>Capacity & Drafts</Text>
-          <View style={styles.field}><Text style={typography.label}>Staff-to-Student Capacity</Text><TextInput style={styles.textInput} value={capacity} onChangeText={setCapacity} keyboardType="number-pad" /></View>
-          <View style={styles.field}><Text style={typography.label}>Draft Expiry Period (1-30 days)</Text><TextInput style={styles.textInput} value={draftExpiry} onChangeText={setDraftExpiry} keyboardType="number-pad" /></View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={typography.h3}>Session Block Definitions</Text>
-          {blocks.map((b) => (
-            <View key={b.id} style={styles.blockRow}>
-              <Text style={typography.body}>{b.name} · {b.startTime}–{b.endTime}</Text>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.headerLeft}>
+              <Text style={typography.h1}>Session Schedule & Capacity</Text>
+              <Text style={typography.caption}>SCR-ADMIN-004 · Define therapy session rounds, capacity, and block definitions</Text>
             </View>
-          ))}
-        </View>
-      </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.saveConfigBtn} onPress={handleSave}>
-          <Text style={styles.saveConfigBtnText}>Save Configuration</Text>
-        </TouchableOpacity>
-      </View>
+            {/* Session Schedule Collapsible */}
+            <View style={styles.card}>
+              <TouchableOpacity style={styles.collapsibleHeader} onPress={() => setScheduleOpen((v) => !v)}>
+                <Text style={typography.h3}>Session Schedule</Text>
+                <Feather name={scheduleOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.bodyText} />
+              </TouchableOpacity>
+              {scheduleOpen && (
+                <View style={styles.grid2}>
+                  <View style={styles.field}>
+                    <Text style={typography.label}>Morning Round Start</Text>
+                    <TextInput style={styles.timeInput} value={morningStart} onChangeText={setMorningStart} placeholder="HH:MM" placeholderTextColor={colors.mutedText} />
+                  </View>
+                  <View style={styles.field}>
+                    <Text style={typography.label}>Morning Round End</Text>
+                    <TextInput style={styles.timeInput} value={morningEnd} onChangeText={setMorningEnd} placeholder="HH:MM" placeholderTextColor={colors.mutedText} />
+                  </View>
+                  <View style={styles.field}>
+                    <Text style={typography.label}>Afternoon Round Start</Text>
+                    <TextInput style={styles.timeInput} value={afternoonStart} onChangeText={setAfternoonStart} placeholder="HH:MM" placeholderTextColor={colors.mutedText} />
+                  </View>
+                  <View style={styles.field}>
+                    <Text style={typography.label}>Afternoon Round End</Text>
+                    <TextInput style={styles.timeInput} value={afternoonEnd} onChangeText={setAfternoonEnd} placeholder="HH:MM" placeholderTextColor={colors.mutedText} />
+                  </View>
+                  <View style={styles.field}>
+                    <Text style={typography.label}>Pre-Therapy Duration (minutes)</Text>
+                    <TextInput style={[styles.timeInput, { width: 80 }]} keyboardType="number-pad" value={preTherapy} onChangeText={setPreTherapy} />
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* Capacity & Expiry */}
+            <View style={styles.twoCol}>
+              <View style={styles.card}>
+                <Text style={typography.h3}>Staff-to-Student Capacity</Text>
+                <View style={styles.field}>
+                  <Text style={typography.label}>Students per Staff Member</Text>
+                  <TextInput style={[styles.timeInput, { width: 80 }]} keyboardType="number-pad" value={capacity} onChangeText={setCapacity} />
+                </View>
+              </View>
+              <View style={styles.card}>
+                <Text style={typography.h3}>Draft Expiry Period</Text>
+                <View style={styles.field}>
+                  <Text style={typography.label}>Days until draft expires (1–30)</Text>
+                  <TextInput style={[styles.timeInput, { width: 80 }]} keyboardType="number-pad" value={draftExpiry} onChangeText={setDraftExpiry} />
+                </View>
+              </View>
+            </View>
+
+            {/* Session Block Definitions */}
+            <View style={styles.card}>
+              <View style={styles.tableHeaderBg}>
+                <Text style={typography.h3}>Session Block Definitions</Text>
+              </View>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.thCell, { flex: 2 }]}>Block Name</Text>
+                <Text style={[styles.thCell, { flex: 1.5 }]}>Start Time</Text>
+                <Text style={[styles.thCell, { flex: 1.5 }]}>End Time</Text>
+              </View>
+              {blocks.map((block) => (
+                <View key={block.id} style={styles.tableRow}>
+                  <Text style={[styles.tdCellText, { flex: 2, fontWeight: '600' }]}>{block.name}</Text>
+                  <View style={[styles.tdCell, { flex: 1.5 }]}>
+                    <TextInput style={styles.timeInput} value={block.start} onChangeText={(v: string) => updateBlock(block.id, 'start', v)} placeholder="HH:MM" placeholderTextColor={colors.mutedText} />
+                  </View>
+                  <View style={[styles.tdCell, { flex: 1.5 }]}>
+                    <TextInput style={styles.timeInput} value={block.end} onChangeText={(v: string) => updateBlock(block.id, 'end', v)} placeholder="HH:MM" placeholderTextColor={colors.mutedText} />
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+              <Feather name="save" size={14} color={colors.navyText} />
+              <Text style={styles.saveBtnText}>Save Configuration</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
     </SafeAreaView>
   );
 }
 
-const DEMO_BLOCKS: ScheduleBlock[] = [
-  { id: 'b1', name: 'Station 1 (Basic Skills)', startTime: '9:00 AM', endTime: '10:30 AM' },
-  { id: 'b2', name: 'Station 2 (Advanced Skills)', startTime: '11:00 AM', endTime: '12:30 PM' },
-];
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  header: { padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
-  content: { padding: spacing.lg, gap: spacing.lg },
-  card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.md },
-  row2: { flexDirection: 'row', gap: spacing.md },
-  field: { gap: spacing.xs },
-  textInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, color: colors.navyText },
-  blockRow: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
-  footer: { padding: spacing.lg, backgroundColor: colors.bgCard, borderTopWidth: 1, borderTopColor: colors.border },
-  saveConfigBtn: { backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
-  saveConfigBtnText: { fontWeight: '700', color: colors.navyText },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  headerLeft: { gap: 2 },
+  card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.sm },
+  collapsibleHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs },
+  grid2: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
+  twoCol: { flexDirection: 'row', gap: spacing.lg },
+  field: { gap: spacing.xs, marginTop: spacing.sm },
+  timeInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, fontSize: 13, color: colors.navyText, backgroundColor: colors.bgCard },
+  tableHeaderBg: { paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
+  tableHeader: { flexDirection: 'row', backgroundColor: colors.bgTableHeader, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm, marginTop: spacing.sm },
+  thCell: { fontSize: 10, fontWeight: '700', color: colors.mutedText, textTransform: 'uppercase', letterSpacing: 0.5 },
+  tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  tdCell: { paddingHorizontal: spacing.xs },
+  tdCellText: { fontSize: 13, color: colors.navyText },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2, alignSelf: 'flex-start' },
+  saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
 });

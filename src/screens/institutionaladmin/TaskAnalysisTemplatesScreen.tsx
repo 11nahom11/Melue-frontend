@@ -1,10 +1,5 @@
-// screens/institutionaladmin/TaskAnalysisTemplatesScreen.js
-// SCR-ADMIN-006: Task Analysis Templates
-// This is the real config source behind the "task_analysis" goal type
-// used in MR-33's session screen (StudentSessionCard's TaskAnalysisStepList).
-
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
@@ -14,141 +9,55 @@ import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getTaskAnalysisTemplates, saveTaskAnalysisTemplate, deleteTaskAnalysisTemplate } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
 
-interface TaskAnalysisStep {
-  id: string;
-  description: string;
-}
-
-interface TaskAnalysisTemplate {
+interface TaskTemplate {
   id: string;
   name: string;
-  description: string;
-  steps: TaskAnalysisStep[];
-  active?: boolean;
+  steps: number;
+  status: string;
 }
 
-type TemplatePayload = {
-  id?: string;
-  name: string;
-  description: string;
-  steps: TaskAnalysisStep[];
-};
-
-function TemplateEditorModal({ visible, template, onClose, onSave }: {
-  visible: boolean;
-  template: TaskAnalysisTemplate | null | undefined;
-  onClose: () => void;
-  onSave: (payload: TemplatePayload) => void;
-}) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [steps, setSteps] = useState<TaskAnalysisStep[]>([]);
-
-  useEffect(() => {
-    if (template) { setName(template.name); setDescription(template.description); setSteps(template.steps); }
-    else { setName(''); setDescription(''); setSteps([]); }
-  }, [template, visible]);
-
-  const addStep = () => setSteps((prev) => [...prev, { id: `s-${Date.now()}`, description: '' }]);
-  const updateStep = (id: string, description: string) => setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, description } : s)));
-  const deleteStep = (id: string) => setSteps((prev) => prev.filter((s) => s.id !== id));
-  const moveStep = (index: number, dir: number) => {
-    setSteps((prev) => {
-      const next = [...prev];
-      const target = index + dir;
-      if (target < 0 || target >= next.length) return prev;
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  };
-
-  const handleSave = () => {
-    if (!name.trim()) { Alert.alert('Template name required'); return; }
-    if (steps.length === 0) { Alert.alert('At least one step required'); return; }
-    onSave({ id: template?.id, name, description, steps });
-  };
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.modalSheet}>
-          <Text style={typography.h2}>{template ? 'Edit Template' : 'New Template'}</Text>
-          <ScrollView contentContainerStyle={{ gap: spacing.md }}>
-            <View style={styles.field}>
-              <Text style={typography.label}>Template Name</Text>
-              <TextInput style={styles.textInput} value={name} onChangeText={setName} placeholder="e.g. Handwashing Sequence" placeholderTextColor={colors.mutedText} />
-            </View>
-            <View style={styles.field}>
-              <Text style={typography.label}>Description</Text>
-              <TextInput style={[styles.textInput, styles.textArea]} multiline value={description} onChangeText={setDescription} placeholderTextColor={colors.mutedText} />
-            </View>
-            <View style={styles.field}>
-              <View style={styles.stepsHeaderRow}>
-                <Text style={typography.label}>Steps</Text>
-                <TouchableOpacity onPress={addStep}><Feather name="plus" size={16} color={colors.navyText} /></TouchableOpacity>
-              </View>
-              {steps.map((s, i) => (
-                <View key={s.id} style={styles.stepRow}>
-                  <View>
-                    <TouchableOpacity onPress={() => moveStep(i, -1)} disabled={i === 0}><Feather name="chevron-up" size={14} color={i === 0 ? colors.mutedText : colors.navyText} /></TouchableOpacity>
-                    <TouchableOpacity onPress={() => moveStep(i, 1)} disabled={i === steps.length - 1}><Feather name="chevron-down" size={14} color={i === steps.length - 1 ? colors.mutedText : colors.navyText} /></TouchableOpacity>
-                  </View>
-                  <Text style={typography.caption}>{i + 1}.</Text>
-                  <TextInput style={styles.stepInput} value={s.description} onChangeText={(v) => updateStep(s.id, v)} placeholder="Step description..." placeholderTextColor={colors.mutedText} />
-                  <TouchableOpacity onPress={() => deleteStep(s.id)}><Feather name="trash-2" size={14} color="#EF4444" /></TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
-          <View style={styles.modalFooter}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}><Text style={styles.saveBtnText}>Save Template</Text></TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
+const DEMO_TEMPLATES: TaskTemplate[] = [
+  { id: '1', name: 'Hand Washing', steps: 8, status: 'Active' },
+  { id: '2', name: 'Tooth Brushing', steps: 6, status: 'Active' },
+  { id: '3', name: 'Getting Dressed', steps: 10, status: 'Active' },
+];
 
 export default function TaskAnalysisTemplatesScreen({ navigation }: NativeStackScreenProps<InstitutionalAdminStackParamList, 'TaskAnalysisTemplates'>) {
-  const [templates, setTemplates] = useState<TaskAnalysisTemplate[]>([]);
-  const [editorTarget, setEditorTarget] = useState<TaskAnalysisTemplate | null | undefined>(undefined);
+  const [templates, setTemplates] = useState<TaskTemplate[]>(DEMO_TEMPLATES);
+  const [addingTemplate, setAddingTemplate] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateDesc, setNewTemplateDesc] = useState('');
+  const [steps, setSteps] = useState<string[]>(['']);
+  const [stepMastery, setStepMastery] = useState('80');
+  const [overallMastery, setOverallMastery] = useState('80');
 
   const load = useCallback(async () => {
-    try {
-      const { data } = await getTaskAnalysisTemplates();
-      setTemplates(data);
-    } catch (err) {
-      setTemplates(DEMO_TEMPLATES);
-    }
+    try { const { data } = await getTaskAnalysisTemplates(); setTemplates(data); } catch {}
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const handleSave = async (payload: TemplatePayload) => {
-    try {
-      const { data } = await saveTaskAnalysisTemplate(payload.id ?? null, payload);
-      setTemplates((prev) => (payload.id ? prev.map((t) => (t.id === payload.id ? data : t)) : [...prev, data]));
-    } catch (err) {
-      setTemplates((prev) =>
-        payload.id ? prev.map((t) => (t.id === payload.id ? { ...t, ...payload } : t)) : [...prev, { ...payload, id: `local-${Date.now()}`, active: true }]
-      );
-    }
-    setEditorTarget(undefined);
+  const addStep = () => setSteps((s) => [...s, '']);
+  const removeStep = (i: number) => setSteps((s) => s.filter((_, idx) => idx !== i));
+  const moveStepUp = (i: number) => {
+    if (i === 0) return;
+    setSteps((s) => { const n = [...s]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; return n; });
+  };
+  const moveStepDown = (i: number) => {
+    setSteps((s) => { if (i === s.length - 1) return s; const n = [...s]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; return n; });
   };
 
-  const handleDelete = (template: TaskAnalysisTemplate) => {
-    Alert.alert(`Delete "${template.name}"?`, 'Cannot delete if currently in use.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try { await deleteTaskAnalysisTemplate(template.id); } catch (err) {}
-          setTemplates((prev) => prev.filter((t) => t.id !== template.id));
-        },
-      },
-    ]);
+  const saveTemplate = () => {
+    if (!newTemplateName.trim()) return;
+    setTemplates((ts) => [...ts, { id: String(Date.now()), name: newTemplateName, steps: steps.filter(Boolean).length, status: 'Active' }]);
+    setAddingTemplate(false);
+    setNewTemplateName('');
+    setNewTemplateDesc('');
+    setSteps(['']);
+  };
+
+  const deleteTemplate = (id: string) => {
+    setTemplates((ts) => ts.filter((t) => t.id !== id));
   };
 
   return (
@@ -157,71 +66,140 @@ export default function TaskAnalysisTemplatesScreen({ navigation }: NativeStackS
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="TaskAnalysisTemplates" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>
-          <View style={styles.header}>
-        <Text style={typography.h1}>Task Analysis Templates</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setEditorTarget(null)}>
-          <Feather name="plus" size={14} color={colors.navyText} />
-          <Text style={styles.addBtnText}>Add Template</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {templates.map((t) => (
-          <View key={t.id} style={styles.card}>
-            <Text style={typography.bodyBold}>{t.name}</Text>
-            <Text style={typography.caption}>{t.steps.length} steps</Text>
-            <Text style={typography.body} numberOfLines={2}>{t.description}</Text>
-            <View style={styles.cardActionsRow}>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => setEditorTarget(t)}><Text style={styles.actionBtnText}>Edit</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(t)}><Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Delete</Text></TouchableOpacity>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.headerLeft}>
+              <Text style={typography.h1}>Task Analysis Templates</Text>
+              <Text style={typography.caption}>SCR-ADMIN-006 · Manage step-by-step task analysis templates</Text>
             </View>
-          </View>
-        ))}
-      </ScrollView>
 
+            {/* Templates Table */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={typography.h3}>Templates</Text>
+                {!addingTemplate && (
+                  <TouchableOpacity style={styles.addLink} onPress={() => setAddingTemplate(true)}>
+                    <Feather name="plus" size={14} color={colors.skyDark} />
+                    <Text style={styles.addLinkText}>Add Template</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.thCell, { flex: 2 }]}>Template Name</Text>
+                <Text style={[styles.thCell, { flex: 1 }]}>Steps</Text>
+                <Text style={[styles.thCell, { flex: 1 }]}>Status</Text>
+                <Text style={[styles.thCell, { flex: 1.5 }]}>Actions</Text>
+              </View>
+              {templates.map((t) => (
+                <View key={t.id} style={styles.tableRow}>
+                  <Text style={[styles.tdCellText, { flex: 2, fontWeight: '600' }]}>{t.name}</Text>
+                  <Text style={[styles.tdCellText, { flex: 1 }]}>{t.steps} steps</Text>
+                  <View style={[styles.tdCell, { flex: 1 }]}>
+                    <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>{t.status}</Text></View>
+                  </View>
+                  <View style={[styles.tdCell, { flex: 1.5 }]}>
+                    <View style={styles.actionRow}>
+                      <TouchableOpacity><Feather name="edit-2" size={15} color={colors.mutedText} /></TouchableOpacity>
+                      <TouchableOpacity onPress={() => deleteTemplate(t.id)}><Feather name="trash-2" size={15} color={colors.danger} /></TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Add Template Form */}
+            {addingTemplate && (
+              <View style={styles.addTemplateCard}>
+                <Text style={typography.h3}>New Template</Text>
+                <View style={styles.addTemplateGrid}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={typography.label}>Template Name</Text>
+                    <TextInput style={styles.inlineInput} value={newTemplateName} onChangeText={setNewTemplateName} placeholder="e.g. Shoe Tying" placeholderTextColor={colors.mutedText} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={typography.label}>Description</Text>
+                    <TextInput style={[styles.inlineInput, { minHeight: 50 }]} multiline value={newTemplateDesc} onChangeText={setNewTemplateDesc} placeholder="Brief description..." placeholderTextColor={colors.mutedText} />
+                  </View>
+                </View>
+
+                {/* Steps Manager */}
+                <View>
+                  <Text style={typography.label}>Steps</Text>
+                  <View style={styles.stepsContainer}>
+                    {steps.map((step, i) => (
+                      <View key={i} style={styles.stepRow}>
+                        <Text style={styles.stepNum}>{i + 1}.</Text>
+                        <TextInput style={styles.stepInput} value={step} onChangeText={(v: string) => setSteps((s) => s.map((x, idx) => (idx === i ? v : x)))} placeholder={`Step ${i + 1}...`} placeholderTextColor={colors.mutedText} />
+                        <TouchableOpacity onPress={() => moveStepUp(i)}><Feather name="arrow-up" size={14} color={colors.skyDark} /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => moveStepDown(i)}><Feather name="arrow-down" size={14} color={colors.skyDark} /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => removeStep(i)}><Feather name="trash-2" size={14} color={colors.danger} /></TouchableOpacity>
+                      </View>
+                    ))}
+                    <TouchableOpacity style={styles.addStepLink} onPress={addStep}>
+                      <Feather name="plus" size={13} color={colors.skyDark} />
+                      <Text style={styles.addStepLinkText}>Add Step</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Mastery Criteria */}
+                <View style={styles.masteryRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={typography.label}>Per-Step Mastery %</Text>
+                    <TextInput style={[styles.inlineInput, { width: 80 }]} keyboardType="number-pad" value={stepMastery} onChangeText={setStepMastery} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={typography.label}>Overall Mastery %</Text>
+                    <TextInput style={[styles.inlineInput, { width: 80 }]} keyboardType="number-pad" value={overallMastery} onChangeText={setOverallMastery} />
+                  </View>
+                </View>
+
+                <View style={styles.formActions}>
+                  <TouchableOpacity style={styles.saveBtn} onPress={saveTemplate}>
+                    <Feather name="save" size={14} color={colors.navyText} />
+                    <Text style={styles.saveBtnText}>Save Template</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={() => setAddingTemplate(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </ScrollView>
         </View>
       </View>
-
-      <TemplateEditorModal visible={editorTarget !== undefined} template={editorTarget} onClose={() => setEditorTarget(undefined)} onSave={handleSave} />
     </SafeAreaView>
   );
 }
-
-const DEMO_TEMPLATES: TaskAnalysisTemplate[] = [
-  {
-    id: 't1', name: 'Handwashing Sequence', description: '8-step handwashing task analysis.',
-    steps: [
-      { id: 's1', description: 'Turn on water' }, { id: 's2', description: 'Wet hands' },
-      { id: 's3', description: 'Apply soap' }, { id: 's4', description: 'Rub hands together 20 sec' },
-      { id: 's5', description: 'Rinse hands' }, { id: 's6', description: 'Turn off water' },
-      { id: 's7', description: 'Take paper towel' }, { id: 's8', description: 'Dry hands' },
-    ],
-  },
-];
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
-  addBtn: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  addBtnText: { fontWeight: '700', color: colors.navyText, fontSize: 12 },
-  content: { padding: spacing.lg, gap: spacing.md },
-  card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
-  cardActionsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  actionBtn: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingVertical: spacing.sm, alignItems: 'center' },
-  actionBtnText: { fontSize: 12, fontWeight: '600', color: colors.navyText },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: spacing.lg },
-  modalSheet: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md, maxHeight: '90%' },
-  field: { gap: spacing.xs },
-  textInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, color: colors.navyText },
-  textArea: { minHeight: 60, textAlignVertical: 'top' },
-  stepsHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
-  stepInput: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, padding: spacing.sm },
-  modalFooter: { flexDirection: 'row', gap: spacing.sm },
-  cancelBtn: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
-  cancelBtnText: { fontWeight: '600', color: colors.navyText },
-  saveBtn: { flex: 2, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
-  saveBtnText: { fontWeight: '700', color: colors.navyText },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  headerLeft: { gap: 2 },
+  card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.xs },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+  tableHeader: { flexDirection: 'row', backgroundColor: colors.bgTableHeader, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
+  thCell: { fontSize: 10, fontWeight: '700', color: colors.mutedText, textTransform: 'uppercase', letterSpacing: 0.5 },
+  tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  tdCell: { paddingHorizontal: spacing.xs },
+  tdCellText: { fontSize: 13, color: colors.navyText },
+  activeBadge: { backgroundColor: '#D1FAE5', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm, alignSelf: 'flex-start' },
+  activeBadgeText: { fontSize: 10, fontWeight: '700', color: '#059669' },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  addLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  addLinkText: { fontSize: 13, fontWeight: '600', color: colors.skyDark },
+  addTemplateCard: { borderWidth: 1, borderColor: '#38BDF8', borderRadius: radius.lg, padding: spacing.lg, backgroundColor: '#EFF6FF', gap: spacing.md },
+  addTemplateGrid: { flexDirection: 'row', gap: spacing.md },
+  inlineInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs + 2, fontSize: 12, color: colors.navyText, backgroundColor: colors.bgCard },
+  stepsContainer: { gap: spacing.xs, marginTop: spacing.xs },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  stepNum: { fontSize: 11, fontFamily: 'monospace', color: colors.mutedText, width: 20 },
+  stepInput: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, fontSize: 12, color: colors.navyText, backgroundColor: colors.bgCard },
+  addStepLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
+  addStepLinkText: { fontSize: 12, fontWeight: '600', color: colors.skyDark },
+  masteryRow: { flexDirection: 'row', gap: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  formActions: { flexDirection: 'row', gap: spacing.sm },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2 },
+  saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
+  cancelBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
+  cancelBtnText: { fontSize: 13, fontWeight: '600', color: colors.bodyText },
 });

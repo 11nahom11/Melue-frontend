@@ -1,12 +1,3 @@
-// screens/institutionaladmin/FormBuilderScreen.js
-// SCR-ADMIN-001: Form Builder
-//
-// SIMPLIFIED vs spec: true drag-and-drop form building would need a
-// dedicated DnD library. Built as a reorder-by-buttons + toggle-visibility
-// field list instead, which covers the same underlying config (field
-// order, visibility, required, label) without the drag gesture. Flag for
-// review if drag-and-drop is a hard requirement.
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Modal, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -15,12 +6,22 @@ import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav from './components/InstitutionalAdminNav';
 import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
-import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getFormConfig, saveFormConfig, resetFormToDefault } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
 
 const FORMS = ['Enrollment Wizard', 'IUP Form', 'ABLLS Assessment Form'];
-const FIELD_TYPES = ['Text', 'Number', 'Date', 'Dropdown', 'Checkbox', 'Radio', 'Text Area', 'File Upload'];
+const FIELD_TYPES = ['Text', 'Number', 'Date', 'Dropdown', 'Checkbox', 'Radio', 'TextArea', 'File'];
+
+const TYPE_BADGE: Record<string, { bg: string; text: string }> = {
+  Text: { bg: '#DBEAFE', text: '#1D4ED8' },
+  Number: { bg: '#D1FAE5', text: '#059669' },
+  Date: { bg: '#FCE7F3', text: '#BE185D' },
+  Dropdown: { bg: '#E0E7FF', text: '#4338CA' },
+  Checkbox: { bg: '#FEF3C7', text: '#B45309' },
+  Radio: { bg: '#EDE9FE', text: '#7C3AED' },
+  TextArea: { bg: '#FFEDD5', text: '#C2410C' },
+  File: { bg: '#F3F4F6', text: '#6B7280' },
+};
 
 interface FormField {
   id: string;
@@ -28,7 +29,6 @@ interface FormField {
   label: string;
   required: boolean;
   visible: boolean;
-  helpText?: string;
 }
 
 interface HistoryEntry {
@@ -39,134 +39,84 @@ interface HistoryEntry {
   newValue: string;
 }
 
-function FieldPropertiesModal({ visible, field, onClose, onSave }: {
-  visible: boolean;
-  field: FormField | null;
-  onClose: () => void;
-  onSave: (updated: FormField) => void;
-}) {
-  const [label, setLabel] = useState('');
-  const [required, setRequired] = useState(false);
-  const [helpText, setHelpText] = useState('');
-  useEffect(() => {
-    if (field) { setLabel(field.label); setRequired(field.required); setHelpText(field.helpText || ''); }
-  }, [field, visible]);
-  if (!field) return null;
+function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.modalSheet}>
-          <Text style={typography.h3}>Field Properties</Text>
-          <View style={styles.field}>
-            <Text style={typography.label}>Label</Text>
-            <TextInput style={styles.textInput} value={label} onChangeText={setLabel} />
-          </View>
-          <View style={styles.field}>
-            <Text style={typography.label}>Help Text</Text>
-            <TextInput style={styles.textInput} value={helpText} onChangeText={setHelpText} />
-          </View>
-          <TouchableOpacity style={styles.toggleRow} onPress={() => setRequired((r) => !r)}>
-            <View style={[styles.checkbox, required && styles.checkboxChecked]} />
-            <Text style={typography.body}>Required</Text>
-          </TouchableOpacity>
-          <View style={styles.modalFooter}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={() => onSave({ ...field, label, required, helpText })}><Text style={styles.saveBtnText}>Save</Text></TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    <TouchableOpacity onPress={onChange} activeOpacity={0.7} style={[styles.toggleTrack, enabled && styles.toggleTrackOn]}>
+      <View style={[styles.toggleKnob, enabled && styles.toggleKnobOn]} />
+    </TouchableOpacity>
   );
 }
 
 export default function FormBuilderScreen({ navigation }: NativeStackScreenProps<InstitutionalAdminStackParamList, 'FormBuilder'>) {
   const [selectedForm, setSelectedForm] = useState(FORMS[0]);
   const [fields, setFields] = useState<FormField[]>([]);
-  const [isDefault, setIsDefault] = useState(true);
-  const [editingField, setEditingField] = useState<FormField | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [addingField, setAddingField] = useState(false);
+  const [newFieldType, setNewFieldType] = useState('Text');
+  const [newFieldLabel, setNewFieldLabel] = useState('');
+  const [newFieldRequired, setNewFieldRequired] = useState(false);
+  const [isCustomTemplate, setIsCustomTemplate] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const { data } = await getFormConfig(selectedForm);
       setFields(data.fields);
-      setIsDefault(data.isDefault);
+      setIsCustomTemplate(!data.isDefault);
       setHistory(data.history || []);
-    } catch (err) {
+    } catch {
       setFields(DEMO_FIELDS[selectedForm] || []);
-      setIsDefault(true);
+      setIsCustomTemplate(false);
       setHistory(DEMO_HISTORY);
     }
   }, [selectedForm]);
 
   useEffect(() => { load(); }, [load]);
 
-  const move = (index: number, dir: number) => {
-    setFields((prev) => {
-      const next = [...prev];
-      const target = index + dir;
-      if (target < 0 || target >= next.length) return prev;
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-    setIsDefault(false);
+  const toggleRequired = (id: string) => {
+    setFields((prev) => prev.map((f) => (f.id === id ? { ...f, required: !f.required } : f)));
+    setIsCustomTemplate(true);
   };
 
   const toggleVisible = (id: string) => {
     setFields((prev) => prev.map((f) => (f.id === id ? { ...f, visible: !f.visible } : f)));
-    setIsDefault(false);
+    setIsCustomTemplate(true);
   };
 
-  const handleAddField = (type: string) => {
-    setFields((prev) => [...prev, { id: `f-${Date.now()}`, type, label: `New ${type} Field`, required: false, visible: true }]);
-    setIsDefault(false);
+  const deleteField = (id: string) => {
+    setFields((prev) => prev.filter((f) => f.id !== id));
+    setIsCustomTemplate(true);
   };
 
-  const handleSaveField = (updated: FormField) => {
-    setFields((prev) => prev.map((f) => (f.id === updated.id ? updated : f)));
-    setIsDefault(false);
-    setEditingField(null);
-  };
-
-  const handleDeleteField = (id: string) => {
-    Alert.alert('Delete this field?', undefined, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => { setFields((prev) => prev.filter((f) => f.id !== id)); setIsDefault(false); } },
-    ]);
-  };
-
-  const handlePreview = () => {
-    const lines: string[] = [];
-    lines.push(`FORM PREVIEW — ${selectedForm}`);
-    lines.push('(read-only render of the configured field order, visibility and required rules)');
-    lines.push('');
-    fields.forEach((f) => {
-      lines.push(`${f.visible ? '' : '[hidden] '}${f.label}${f.required ? ' *' : ''}`);
-      lines.push(`    Type: ${f.type}${f.helpText ? ` · ${f.helpText}` : ''}`);
-    });
-    setPreviewContent(lines.join('\n'));
+  const addField = () => {
+    if (!newFieldLabel.trim()) return;
+    setFields((prev) => [...prev, { id: `f-${Date.now()}`, type: newFieldType, label: newFieldLabel.trim(), required: newFieldRequired, visible: true }]);
+    setNewFieldType('Text');
+    setNewFieldLabel('');
+    setNewFieldRequired(false);
+    setAddingField(false);
+    setIsCustomTemplate(true);
   };
 
   const handleSave = async () => {
     if (fields.length === 0) { Alert.alert('At least one field required'); return; }
-    try { await saveFormConfig(selectedForm, { fields }); } catch (err) {}
+    try {
+      await saveFormConfig(selectedForm, { fields });
+    } catch {}
     Alert.alert('Configuration saved');
   };
 
-  const handleReset = () => {
-    Alert.alert('Reset to default configuration?', 'This discards all customizations.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reset',
-        style: 'destructive',
-        onPress: async () => {
-          try { await resetFormToDefault(selectedForm); } catch (err) {}
-          setFields(DEMO_FIELDS[selectedForm] || []);
-          setIsDefault(true);
-        },
-      },
-    ]);
+  const handleReset = async () => {
+    try {
+      await resetFormToDefault(selectedForm);
+    } catch {}
+    setFields(DEMO_FIELDS[selectedForm] || []);
+    setIsCustomTemplate(false);
+    setAddingField(false);
+    setNewFieldType('Text');
+    setNewFieldLabel('');
+    setNewFieldRequired(false);
   };
 
   return (
@@ -175,142 +125,270 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="FormBuilder" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>
-          <View style={styles.header}>
-        <Text style={typography.h1}>Form Builder</Text>
-        <View style={[styles.templateBadge, !isDefault && styles.templateBadgeCustom]}>
-          <Text style={styles.templateBadgeText}>{isDefault ? 'Using Default Template' : 'Custom Template'}</Text>
-        </View>
-      </View>
+          <ScrollView contentContainerStyle={styles.content}>
+            <View style={styles.sectionHeader}>
+              <Text style={typography.h1}>Form Builder</Text>
+              <Text style={styles.sectionDesc}>SCR-ADMIN-001 · Configure enrollment and assessment form templates</Text>
+            </View>
 
-      <View style={styles.formSelectorRow}>
-        {FORMS.map((f) => (
-          <TouchableOpacity key={f} style={[styles.formChip, selectedForm === f && styles.formChipActive]} onPress={() => setSelectedForm(f)}>
-            <Text style={[typography.bodyBold, selectedForm === f && { color: colors.navyText }]}>{f}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <View style={styles.controlsRow}>
+              {FORMS.map((f) => (
+                <TouchableOpacity key={f} style={[styles.formChip, selectedForm === f && styles.formChipActive]} onPress={() => setSelectedForm(f)}>
+                  <Text style={[styles.formChipText, selectedForm === f && styles.formChipTextActive]}>{f}</Text>
+                </TouchableOpacity>
+              ))}
+              <View style={[styles.templateBadge, isCustomTemplate ? styles.templateBadgeCustom : styles.templateBadgeDefault]}>
+                <Text style={[styles.templateBadgeText, { color: isCustomTemplate ? colors.statusPendingText : colors.statusApprovedText }]}>
+                  {isCustomTemplate ? 'Custom Template' : 'Using Default Template'}
+                </Text>
+              </View>
+            </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.card}>
-          <Text style={typography.h3}>Form Canvas</Text>
-          {fields.map((field, i) => (
-            <View key={field.id} style={[styles.fieldRow, !field.visible && styles.fieldRowHidden]}>
-              <View style={styles.fieldOrderCol}>
-                <TouchableOpacity onPress={() => move(i, -1)} disabled={i === 0}>
-                  <Feather name="chevron-up" size={16} color={i === 0 ? colors.mutedText : colors.navyText} />
+            <View style={styles.canvas}>
+              <Text style={styles.canvasTitle}>Form Canvas — {selectedForm}</Text>
+              {fields.map((field) => {
+                const badge = TYPE_BADGE[field.type] || TYPE_BADGE.Text;
+                return (
+                  <View key={field.id} style={styles.fieldRow}>
+                    <View style={[styles.typeBadge, { backgroundColor: badge.bg }]}>
+                      <Text style={[styles.typeBadgeText, { color: badge.text }]}>{field.type}</Text>
+                    </View>
+                    <Text style={styles.fieldLabel}>{field.label}</Text>
+                    <View style={styles.requiredGroup}>
+                      <Text style={styles.requiredLabel}>Required</Text>
+                      <Toggle enabled={field.required} onChange={() => toggleRequired(field.id)} />
+                    </View>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => toggleVisible(field.id)}>
+                      <Feather name={field.visible ? 'eye' : 'eye-off'} size={16} color="#6B7280" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => deleteField(field.id)}>
+                      <Feather name="trash-2" size={16} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+
+              {addingField ? (
+                <View style={styles.addFieldForm}>
+                  <View style={styles.addFieldCol}>
+                    <Text style={styles.addFieldLabel}>Field Type</Text>
+                    <View style={styles.typeChipRow}>
+                      {FIELD_TYPES.map((t) => (
+                        <TouchableOpacity key={t} style={[styles.typeChip, newFieldType === t && styles.typeChipActive]} onPress={() => setNewFieldType(t)}>
+                          <Text style={[styles.typeChipText, newFieldType === t && styles.typeChipTextActive]}>{t}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                  <View style={styles.addFieldColWide}>
+                    <Text style={styles.addFieldLabel}>Label</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={newFieldLabel}
+                      onChangeText={setNewFieldLabel}
+                      placeholder="Field label..."
+                      placeholderTextColor={colors.mutedText}
+                    />
+                  </View>
+                  <View style={styles.requiredGroup}>
+                    <Text style={styles.requiredLabel}>Required</Text>
+                    <Toggle enabled={newFieldRequired} onChange={() => setNewFieldRequired((r) => !r)} />
+                  </View>
+                  <View style={styles.addFieldActions}>
+                    <TouchableOpacity style={styles.yellowBtnSmall} onPress={addField}>
+                      <Text style={styles.yellowBtnText}>Add Field</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.ghostBtnSmall} onPress={() => setAddingField(false)}>
+                      <Text style={styles.ghostBtnText}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.addFieldLink} onPress={() => setAddingField(true)}>
+                  <Feather name="plus" size={15} color="#0284C7" />
+                  <Text style={styles.addFieldLinkText}>Add New Field</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => move(i, 1)} disabled={i === fields.length - 1}>
-                  <Feather name="chevron-down" size={16} color={i === fields.length - 1 ? colors.mutedText : colors.navyText} />
-                </TouchableOpacity>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={typography.bodyBold}>{field.label}{field.required ? ' *' : ''}</Text>
-                <Text style={typography.caption}>{field.type}</Text>
-              </View>
-              <TouchableOpacity onPress={() => toggleVisible(field.id)}>
-                <Feather name={field.visible ? 'eye' : 'eye-off'} size={16} color={colors.navyText} />
+              )}
+            </View>
+
+            <View style={styles.actionsRow}>
+              <TouchableOpacity style={styles.yellowBtn} onPress={() => setPreviewOpen(true)}>
+                <Feather name="eye" size={15} color={colors.navyText} />
+                <Text style={styles.yellowBtnText}>Preview Form</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setEditingField(field)}>
-                <Feather name="edit-2" size={16} color={colors.navyText} />
+              <TouchableOpacity style={styles.yellowBtn} onPress={handleSave}>
+                <Feather name="save" size={15} color={colors.navyText} />
+                <Text style={styles.yellowBtnText}>Save Configuration</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteField(field.id)}>
-                <Feather name="trash-2" size={16} color="#EF4444" />
+              <TouchableOpacity style={styles.dangerGhostBtn} onPress={handleReset}>
+                <Feather name="refresh-cw" size={15} color="#DC2626" />
+                <Text style={styles.dangerGhostBtnText}>Reset to Default</Text>
               </TouchableOpacity>
             </View>
-          ))}
-        </View>
 
-        <View style={styles.card}>
-          <Text style={typography.h3}>Add New Field</Text>
-          <View style={styles.fieldTypeGrid}>
-            {FIELD_TYPES.map((t) => (
-              <TouchableOpacity key={t} style={styles.fieldTypeBtn} onPress={() => handleAddField(t)}>
-                <Text style={styles.fieldTypeBtnText}>{t}</Text>
+            <View style={styles.historyCard}>
+              <TouchableOpacity style={styles.historyHeader} onPress={() => setHistoryOpen((h) => !h)}>
+                <Text style={styles.historyHeaderText}>Modification History</Text>
+                <Feather name={historyOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#374151" />
               </TouchableOpacity>
-            ))}
+              {historyOpen && (
+                <View>
+                  <View style={[styles.tableRow, styles.tableHeadRow]}>
+                    <Text style={[styles.col, styles.tableHeadCell, { flex: 1.1 }]}>Date</Text>
+                    <Text style={[styles.col, styles.tableHeadCell, { flex: 0.9 }]}>User</Text>
+                    <Text style={[styles.col, styles.tableHeadCell, { flex: 1.2 }]}>Field</Text>
+                    <Text style={[styles.col, styles.tableHeadCell, { flex: 0.9 }]}>Old Value</Text>
+                    <Text style={[styles.col, styles.tableHeadCell, { flex: 0.9 }]}>New Value</Text>
+                  </View>
+                  {history.map((row, i) => (
+                    <View key={i} style={[styles.tableRow, i > 0 && styles.tableRowBordered]}>
+                      <Text style={[styles.col, styles.cellMuted, { flex: 1.1 }]}>{row.date}</Text>
+                      <Text style={[styles.col, styles.cellStrong, { flex: 0.9 }]}>{row.user}</Text>
+                      <Text style={[styles.col, styles.cellBody, { flex: 1.2 }]}>{row.field}</Text>
+                      <Text style={[styles.col, styles.cellOld, { flex: 0.9 }]}>{row.oldValue}</Text>
+                      <Text style={[styles.col, styles.cellNew, { flex: 0.9 }]}>{row.newValue}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+
+      <Modal visible={previewOpen} transparent animationType="fade" onRequestClose={() => setPreviewOpen(false)}>
+        <View style={styles.overlay}>
+          <View style={styles.previewCard}>
+            <View style={styles.previewHeader}>
+              <Text style={typography.h3}>Form Preview — {selectedForm}</Text>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => setPreviewOpen(false)}>
+                <Feather name="x" size={18} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.previewScroll}>
+              {fields.filter((f) => f.visible).map((field) => (
+                <View key={field.id} style={styles.previewField}>
+                  <Text style={styles.previewFieldLabel}>
+                    {field.label}
+                    {field.required && <Text style={styles.requiredStar}> *</Text>}
+                  </Text>
+                  <View style={styles.previewPlaceholder}>
+                    <Text style={styles.previewPlaceholderText}>{field.type} field</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+            <View style={styles.previewFooter}>
+              <TouchableOpacity style={styles.ghostBtnSmall} onPress={() => setPreviewOpen(false)}>
+                <Text style={styles.ghostBtnText}>Close</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        <View style={styles.card}>
-          <Text style={typography.h3}>Modification History</Text>
-          {history.map((h, i) => (
-            <Text key={i} style={typography.caption}>{h.date} — {h.user} changed {h.field}: "{h.oldValue}" → "{h.newValue}"</Text>
-          ))}
-          {history.length === 0 && <Text style={typography.caption}>No changes yet.</Text>}
-        </View>
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerBtn} onPress={handleReset}><Text style={styles.footerBtnText}>Reset to Default</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.footerBtn} onPress={handlePreview}><Text style={styles.footerBtnText}>Preview Form</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.saveConfigBtn} onPress={handleSave}><Text style={styles.saveConfigBtnText}>Save Configuration</Text></TouchableOpacity>
-      </View>
-        </View>
-      </View>
-
-      <FieldPropertiesModal visible={!!editingField} field={editingField} onClose={() => setEditingField(null)} onSave={handleSaveField} />
-
-      <ExportPreviewModal
-        visible={!!previewContent}
-        title="Form Preview"
-        filename={`${selectedForm.replace(/\s+/g, '_')}_Preview.txt`}
-        content={previewContent ?? ''}
-        onClose={() => setPreviewContent(null)}
-      />
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const DEMO_FIELDS: Record<string, FormField[]> = {
   'Enrollment Wizard': [
-    { id: 'f1', type: 'Text', label: 'Student Name', required: true, visible: true },
-    { id: 'f2', type: 'Date', label: 'Date of Birth', required: true, visible: true },
+    { id: '1', type: 'Text', label: 'Full Name', required: true, visible: true },
+    { id: '2', type: 'Date', label: 'Date of Birth', required: true, visible: true },
+    { id: '3', type: 'Dropdown', label: 'Program Type', required: false, visible: true },
+    { id: '4', type: 'Text', label: 'Parent Name', required: false, visible: true },
+    { id: '5', type: 'Text', label: 'Phone', required: false, visible: true },
   ],
   'IUP Form': [
-    { id: 'f3', type: 'Text', label: 'Goal Name', required: true, visible: true },
+    { id: '1', type: 'Text', label: 'Student Name', required: true, visible: true },
+    { id: '2', type: 'TextArea', label: 'Learning Objectives', required: true, visible: true },
+    { id: '3', type: 'Dropdown', label: 'Supervisor', required: false, visible: true },
+    { id: '4', type: 'Date', label: 'Review Date', required: false, visible: true },
   ],
   'ABLLS Assessment Form': [
-    { id: 'f4', type: 'Dropdown', label: 'Skill Score', required: true, visible: true },
+    { id: '1', type: 'Text', label: 'Learner Name', required: true, visible: true },
+    { id: '2', type: 'Dropdown', label: 'Skill Area', required: true, visible: true },
+    { id: '3', type: 'Number', label: 'Score', required: false, visible: true },
+    { id: '4', type: 'Checkbox', label: 'Baseline Completed', required: false, visible: true },
   ],
 };
+
 const DEMO_HISTORY: HistoryEntry[] = [
-  { date: 'Aug 1, 2026', user: 'Admin A', field: 'Student Name', oldValue: 'Full Name', newValue: 'Student Name' },
+  { date: '2025-07-28', user: 'Admin A', field: 'Program Type', oldValue: 'Text', newValue: 'Dropdown' },
+  { date: '2025-07-15', user: 'Admin A', field: 'Phone', oldValue: 'Hidden', newValue: 'Visible' },
+  { date: '2025-06-30', user: 'Sysadmin', field: 'Date of Birth', oldValue: 'Optional', newValue: 'Required' },
 ];
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
-  templateBadge: { backgroundColor: colors.statusApprovedBg, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.pill },
-  templateBadgeCustom: { backgroundColor: colors.statusPendingBg },
-  templateBadgeText: { fontSize: 11, fontWeight: '700', color: colors.navyText },
-  formSelectorRow: { flexDirection: 'row', gap: spacing.sm, padding: spacing.md, backgroundColor: colors.bgCard },
-  formChip: { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.md, alignItems: 'center', backgroundColor: colors.bgApp },
-  formChipActive: { backgroundColor: colors.primaryYellow },
   content: { padding: spacing.lg, gap: spacing.lg },
-  card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.sm },
-  fieldRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
-  fieldRowHidden: { opacity: 0.4 },
-  fieldOrderCol: { alignItems: 'center' },
-  fieldTypeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  fieldTypeBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
-  fieldTypeBtnText: { fontSize: 12, fontWeight: '600', color: colors.navyText },
-  footer: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.bgCard, borderTopWidth: 1, borderTopColor: colors.border },
-  footerBtn: { flex: 1, minWidth: 100, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingVertical: spacing.sm, alignItems: 'center' },
-  footerBtnText: { fontSize: 11, fontWeight: '600', color: colors.navyText, textAlign: 'center' },
-  saveConfigBtn: { flex: 2, minWidth: 150, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.sm, alignItems: 'center' },
-  saveConfigBtnText: { fontWeight: '700', color: colors.navyText, fontSize: 12 },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: spacing.lg },
-  modalSheet: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md },
-  field: { gap: spacing.xs },
-  textInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, color: colors.navyText },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  checkbox: { width: 18, height: 18, borderWidth: 1, borderColor: colors.border, borderRadius: 4 },
-  checkboxChecked: { backgroundColor: colors.primaryYellow, borderColor: colors.primaryYellow },
-  modalFooter: { flexDirection: 'row', gap: spacing.sm },
-  cancelBtn: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
-  cancelBtnText: { fontWeight: '600', color: colors.navyText },
-  saveBtn: { flex: 1, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
-  saveBtnText: { fontWeight: '700', color: colors.navyText },
+  sectionHeader: { gap: spacing.xs },
+  sectionDesc: { fontSize: 13, fontWeight: '400', color: colors.bodyText },
+  controlsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+  formChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard },
+  formChipActive: { backgroundColor: colors.primaryYellow, borderColor: colors.primaryYellow },
+  formChipText: { fontSize: 13, fontWeight: '600', color: colors.bodyText },
+  formChipTextActive: { color: colors.navyText },
+  templateBadge: { marginLeft: 'auto', paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill },
+  templateBadgeDefault: { backgroundColor: colors.statusApprovedBg },
+  templateBadgeCustom: { backgroundColor: colors.statusPendingBg },
+  templateBadgeText: { fontSize: 12, fontWeight: '700' },
+  canvas: { borderWidth: 1.5, borderColor: '#D1D5DB', borderStyle: 'dashed', borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.bgApp },
+  canvasTitle: { fontSize: 11, fontWeight: '600', color: colors.mutedText, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.xs },
+  fieldRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  typeBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm },
+  typeBadgeText: { fontSize: 11, fontWeight: '600' },
+  fieldLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.navyText },
+  requiredGroup: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  requiredLabel: { fontSize: 11, fontWeight: '500', color: colors.bodyText },
+  iconBtn: { padding: spacing.xs },
+  toggleTrack: { width: 36, height: 20, borderRadius: 10, backgroundColor: '#D1D5DB', alignItems: 'flex-start', justifyContent: 'center' },
+  toggleTrackOn: { backgroundColor: colors.skyAccent, alignItems: 'flex-end' },
+  toggleKnob: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.white, marginLeft: 2 },
+  toggleKnobOn: { marginRight: 2 },
+  addFieldForm: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', gap: spacing.md, backgroundColor: colors.bgCard, borderWidth: 1, borderColor: 'rgba(56,189,248,0.4)', borderRadius: radius.md, padding: spacing.lg },
+  addFieldCol: { minWidth: 180 },
+  addFieldColWide: { flex: 1, minWidth: 160 },
+  addFieldLabel: { fontSize: 11, fontWeight: '600', color: colors.bodyText, marginBottom: spacing.xs },
+  typeChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  typeChip: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
+  typeChipActive: { backgroundColor: '#E0F2FE', borderColor: colors.skyAccent },
+  typeChipText: { fontSize: 11, fontWeight: '600', color: colors.bodyText },
+  typeChipTextActive: { color: '#0369A1' },
+  textInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 8, fontSize: 13, color: colors.navyText },
+  addFieldActions: { flexDirection: 'row', gap: spacing.sm },
+  addFieldLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
+  addFieldLinkText: { fontSize: 13, fontWeight: '600', color: '#0284C7' },
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  yellowBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  yellowBtnSmall: { backgroundColor: colors.primaryYellow, borderRadius: radius.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, alignItems: 'center' },
+  yellowBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
+  ghostBtnSmall: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgCard },
+  ghostBtnText: { fontSize: 13, fontWeight: '600', color: colors.bodyText },
+  dangerGhostBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1, borderColor: '#FCA5A5', borderRadius: radius.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, backgroundColor: colors.bgCard },
+  dangerGhostBtnText: { fontSize: 13, fontWeight: '600', color: '#DC2626' },
+  historyCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.bgCard },
+  historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, backgroundColor: colors.bgTableHeader },
+  historyHeaderText: { fontSize: 13, fontWeight: '600', color: colors.navyText },
+  tableRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: 10 },
+  tableRowBordered: { borderTopWidth: 1, borderTopColor: colors.border },
+  tableHeadRow: { backgroundColor: colors.bgTableHeader, borderTopWidth: 1, borderTopColor: colors.border },
+  tableHeadCell: { fontSize: 10, fontWeight: '600', color: colors.mutedText, textTransform: 'uppercase', letterSpacing: 0.5 },
+  col: { paddingRight: spacing.xs },
+  cellMuted: { fontSize: 12, fontWeight: '400', color: colors.bodyText },
+  cellStrong: { fontSize: 12, fontWeight: '600', color: colors.navyText },
+  cellBody: { fontSize: 12, fontWeight: '400', color: colors.bodyText },
+  cellOld: { fontSize: 12, fontWeight: '500', color: '#DC2626' },
+  cellNew: { fontSize: 12, fontWeight: '500', color: '#16A34A' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
+  previewCard: { width: '100%', maxWidth: 480, backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.xl },
+  previewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
+  previewScroll: { maxHeight: 380 },
+  previewField: { marginBottom: spacing.md, gap: spacing.xs },
+  previewFieldLabel: { fontSize: 13, fontWeight: '600', color: colors.bodyText },
+  requiredStar: { color: '#EF4444', fontWeight: '700' },
+  previewPlaceholder: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 10, backgroundColor: colors.bgApp },
+  previewPlaceholderText: { fontSize: 13, fontWeight: '400', color: colors.mutedText },
+  previewFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: spacing.lg },
 });
