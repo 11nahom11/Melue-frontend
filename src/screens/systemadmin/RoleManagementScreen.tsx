@@ -99,9 +99,9 @@ export default function RoleManagementScreen({ navigation }: NativeStackScreenPr
 
   return (
     <SafeAreaView style={styles.safe}>
-      <SystemAdminNav activeTab="Roles" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} />
+      <SystemAdminNav activeTab="Roles" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} sectionTitle="Role Management" />
       <View style={styles.body}>
-        <SystemAdminSidebar activeRoute="RoleManagement" onNavigate={(r) => navigation?.navigate?.(r)} />
+        <SystemAdminSidebar activeRoute="RoleManagement" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="SYSTEM CONFIGURATION" />
         <View style={styles.contentArea}>
           <View style={styles.header}>
             <Text style={typography.h1}>Role Management</Text>

@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getGoalDomains, saveGoalDomains } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
 
@@ -50,8 +51,11 @@ export default function GoalDomainDefinitionsScreen({ navigation }: NativeStackS
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Goal Domains" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}>
+      <InstitutionalAdminNav activeTab="Goal Domains" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Goal Domain Definitions" />
+      <View style={styles.body}>
+        <InstitutionalAdminSidebar activeRoute="GoalDomainDefinitions" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
+        <View style={styles.contentArea}>
+          <View style={styles.header}>
         <Text style={typography.h1}>Goal Domain Definitions</Text>
         <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
           <Feather name="plus" size={14} color={colors.navyText} />
@@ -76,6 +80,8 @@ export default function GoalDomainDefinitionsScreen({ navigation }: NativeStackS
           <Text style={styles.saveConfigBtnText}>Save Configuration</Text>
         </TouchableOpacity>
       </View>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -90,6 +96,8 @@ const DEMO_DOMAINS: GoalDomain[] = [
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   addBtn: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   addBtnText: { fontWeight: '700', color: colors.navyText, fontSize: 12 },

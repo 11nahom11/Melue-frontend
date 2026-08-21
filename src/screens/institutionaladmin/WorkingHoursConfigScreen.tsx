@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getWorkingHours, saveWorkingHours } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
 
@@ -43,8 +44,11 @@ export default function WorkingHoursConfigScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Working Hours" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}><Text style={typography.h1}>Working Hours</Text><Text style={typography.caption}>MR-6 — session availability by day</Text></View>
+      <InstitutionalAdminNav activeTab="Working Hours" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Working Hours" />
+      <View style={styles.body}>
+        <InstitutionalAdminSidebar activeRoute="WorkingHoursConfig" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
+        <View style={styles.contentArea}>
+          <View style={styles.header}><Text style={typography.h1}>Working Hours</Text><Text style={typography.caption}>MR-6 — session availability by day</Text></View>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           {DAYS.map((day) => (
@@ -73,6 +77,8 @@ export default function WorkingHoursConfigScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -89,6 +95,8 @@ const DEFAULT: Record<string, DayHours> = {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.xs },
   content: { padding: spacing.lg },
   card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.md },

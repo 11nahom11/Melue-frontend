@@ -13,6 +13,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getAbcLists, saveAbcList, resetAbcListsToDefault } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
 
@@ -149,8 +150,11 @@ export default function AbcDropdownListsScreen({ navigation }: NativeStackScreen
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="ABC Lists" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}><Text style={typography.h1}>ABC Dropdown List Manager</Text></View>
+      <InstitutionalAdminNav activeTab="ABC Lists" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="ABC Dropdown Lists" />
+      <View style={styles.body}>
+        <InstitutionalAdminSidebar activeRoute="AbcDropdownLists" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
+        <View style={styles.contentArea}>
+          <View style={styles.header}><Text style={typography.h1}>ABC Dropdown List Manager</Text></View>
 
       <View style={styles.listTabsRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -190,6 +194,8 @@ export default function AbcDropdownListsScreen({ navigation }: NativeStackScreen
         <TouchableOpacity style={styles.footerBtn} onPress={handleReset}><Text style={styles.footerBtnText}>Reset to Default</Text></TouchableOpacity>
         <TouchableOpacity style={styles.saveConfigBtn} onPress={handleSaveAll}><Text style={styles.saveConfigBtnText}>Save Configuration</Text></TouchableOpacity>
       </View>
+        </View>
+      </View>
 
       {activeList === 'Behaviors' ? (
         <BehaviorFormModal visible={editingItem !== undefined} item={editingItem} onClose={() => setEditingItem(undefined)} onSave={handleSaveItem} />
@@ -215,6 +221,8 @@ const DEMO_LISTS: AbcLists = {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   listTabsRow: { padding: spacing.md, backgroundColor: colors.bgCard },
   listTab: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginRight: spacing.xs },

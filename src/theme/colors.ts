@@ -4,17 +4,29 @@
 
 export const colors = {
   // Brand
-  primaryYellow: '#F6C445', // main CTA buttons (Start Session, Sign In, active tab)
-  primaryYellowDark: '#E0AE2E', // pressed state
+  primaryYellow: '#FCD34D', // main CTA buttons (Sign In, active states)
+  primaryYellowDark: '#FBBF24', // pressed / hover state
   navyText: '#1A2233', // headings, nav text
   bodyText: '#4B5563', // secondary/body text
   mutedText: '#9CA3AF', // placeholders, timestamps
 
+  // Reference accent
+  skyAccent: '#38BDF8', // focus rings, links, active borders (sky-400)
+  skyDark: '#0EA5E9', // pressed accent
+
+  // Dark surfaces
+  darkSurface: '#1F2937', // admin sidebar, dark headers (gray-800)
+  darkSurfaceLight: '#374151', // lighter dark surface (gray-700)
+
   // Backgrounds
-  bgApp: '#F4F5F7', // page background (light grey)
+  bgApp: '#F9FAFB', // page background (gray-50)
   bgCard: '#FFFFFF', // card surfaces
   bgFooter: '#1A2233', // dark footer bar
-  bgActiveCardBorder: '#3B82F6', // blue outline on "Active" student card (Image 2)
+  bgActiveCardBorder: '#38BDF8', // blue outline on active elements
+  bgHeader: '#FFFFFF', // header bar background
+  bgTableHeader: '#F9FAFB', // table header row
+  bgHover: '#F3F4F6', // row hover / pressed state
+  bgInput: '#FFFFFF', // input background
 
   // Status pills
   statusInProgressBg: '#DBEAFE',
@@ -30,15 +42,42 @@ export const colors = {
   statusApprovedBg: '#D1FAE5',
   statusApprovedText: '#059669',
 
-  // Prompt entry buttons (Image 2: FP / PP / G / +)
+  // Role badges (reference AdminPanel)
+  roleTeacherBg: '#DBEAFE',
+  roleTeacherText: '#1D4ED8',
+  roleCoordinatorBg: '#EDE9FE',
+  roleCoordinatorText: '#7C3AED',
+  roleDirectorBg: '#E0E7FF',
+  roleDirectorText: '#4338CA',
+  roleInstitutionalAdminBg: '#FEF3C7',
+  roleInstitutionalAdminText: '#B45309',
+  roleSysAdminBg: '#FEE2E2',
+  roleSysAdminText: '#DC2626',
+  roleActiveBg: '#D1FAE5',
+  roleActiveText: '#059669',
+  roleInactiveBg: '#F3F4F6',
+  roleInactiveText: '#6B7280',
+
+  // Prompt entry buttons
   promptFP: '#FCA5A5', // full physical - red/pink
   promptPP: '#FCD34D', // partial physical - amber
   promptG: '#93C5FD', // gestural - blue
   promptIndependent: '#86EFAC', // "+" independent - green
 
   border: '#E5E7EB',
+  borderLight: '#F3F4F6',
   white: '#FFFFFF',
   black: '#000000',
+
+  // Functional colors
+  danger: '#EF4444',
+  dangerBg: '#FEE2E2',
+  success: '#10B981',
+  successBg: '#D1FAE5',
+  warning: '#F59E0B',
+  warningBg: '#FEF3C7',
+  info: '#3B82F6',
+  infoBg: '#DBEAFE',
 } as const;
 
 export const spacing = {

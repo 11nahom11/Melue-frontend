@@ -10,6 +10,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getTaskAnalysisTemplates, saveTaskAnalysisTemplate, deleteTaskAnalysisTemplate } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
 
@@ -152,8 +153,11 @@ export default function TaskAnalysisTemplatesScreen({ navigation }: NativeStackS
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Task Analysis" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}>
+      <InstitutionalAdminNav activeTab="Task Analysis" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Task Analysis Templates" />
+      <View style={styles.body}>
+        <InstitutionalAdminSidebar activeRoute="TaskAnalysisTemplates" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
+        <View style={styles.contentArea}>
+          <View style={styles.header}>
         <Text style={typography.h1}>Task Analysis Templates</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setEditorTarget(null)}>
           <Feather name="plus" size={14} color={colors.navyText} />
@@ -175,6 +179,9 @@ export default function TaskAnalysisTemplatesScreen({ navigation }: NativeStackS
         ))}
       </ScrollView>
 
+        </View>
+      </View>
+
       <TemplateEditorModal visible={editorTarget !== undefined} template={editorTarget} onClose={() => setEditorTarget(undefined)} onSave={handleSave} />
     </SafeAreaView>
   );
@@ -194,6 +201,8 @@ const DEMO_TEMPLATES: TaskAnalysisTemplate[] = [
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   addBtn: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   addBtnText: { fontWeight: '700', color: colors.navyText, fontSize: 12 },

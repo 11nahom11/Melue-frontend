@@ -1,12 +1,8 @@
-// screens/institutionaladmin/components/InstitutionalAdminSidebar.tsx
-// Delegates to shared AdminSidebar with institutional admin nav items.
-
 import React from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 import type { InstitutionalAdminStackParamList } from '../../../types';
 
 const SIDEBAR_ITEMS = [
-  { label: 'Overview', icon: 'grid' as const, route: 'InstitutionalAdminOverview' },
   { label: 'Form Builder', icon: 'file-text' as const, route: 'FormBuilder' },
   { label: 'Trial Logging', icon: 'layers' as const, route: 'TrialLoggingFormat' },
   { label: 'ABC Dropdowns', icon: 'list' as const, route: 'AbcDropdownLists' },
@@ -22,15 +18,17 @@ const SIDEBAR_ITEMS = [
 interface InstitutionalAdminSidebarProps {
   activeRoute: keyof InstitutionalAdminStackParamList;
   onNavigate: (route: keyof InstitutionalAdminStackParamList) => void;
+  sectionLabel?: string;
 }
 
-export default function InstitutionalAdminSidebar({ activeRoute, onNavigate }: InstitutionalAdminSidebarProps) {
+export default function InstitutionalAdminSidebar({ activeRoute, onNavigate, sectionLabel }: InstitutionalAdminSidebarProps) {
   return (
     <AdminSidebar
       items={SIDEBAR_ITEMS}
       activeRoute={activeRoute}
       onNavigate={(r) => onNavigate(r as keyof InstitutionalAdminStackParamList)}
       roleLabel="INSTITUTIONAL_ADMIN"
+      sectionLabel={sectionLabel}
     />
   );
 }

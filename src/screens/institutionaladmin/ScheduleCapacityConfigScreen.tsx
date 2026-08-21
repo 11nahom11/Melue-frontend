@@ -7,6 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getScheduleCapacityConfig, saveScheduleCapacityConfig } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
 
@@ -55,8 +56,11 @@ export default function ScheduleCapacityConfigScreen({ navigation }: NativeStack
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Schedule" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}><Text style={typography.h1}>Session Schedule & Capacity</Text></View>
+      <InstitutionalAdminNav activeTab="Schedule" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Session Schedule & Capacity" />
+      <View style={styles.body}>
+        <InstitutionalAdminSidebar activeRoute="ScheduleCapacityConfig" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
+        <View style={styles.contentArea}>
+          <View style={styles.header}><Text style={typography.h1}>Session Schedule & Capacity</Text></View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
@@ -93,6 +97,8 @@ export default function ScheduleCapacityConfigScreen({ navigation }: NativeStack
           <Text style={styles.saveConfigBtnText}>Save Configuration</Text>
         </TouchableOpacity>
       </View>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -104,6 +110,8 @@ const DEMO_BLOCKS: ScheduleBlock[] = [
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   content: { padding: spacing.lg, gap: spacing.lg },
   card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.md },

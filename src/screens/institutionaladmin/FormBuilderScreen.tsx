@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getFormConfig, saveFormConfig, resetFormToDefault } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
@@ -170,8 +171,11 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Forms" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}>
+      <InstitutionalAdminNav activeTab="Forms" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Form Builder" />
+      <View style={styles.body}>
+        <InstitutionalAdminSidebar activeRoute="FormBuilder" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
+        <View style={styles.contentArea}>
+          <View style={styles.header}>
         <Text style={typography.h1}>Form Builder</Text>
         <View style={[styles.templateBadge, !isDefault && styles.templateBadgeCustom]}>
           <Text style={styles.templateBadgeText}>{isDefault ? 'Using Default Template' : 'Custom Template'}</Text>
@@ -241,6 +245,8 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
         <TouchableOpacity style={styles.footerBtn} onPress={handlePreview}><Text style={styles.footerBtnText}>Preview Form</Text></TouchableOpacity>
         <TouchableOpacity style={styles.saveConfigBtn} onPress={handleSave}><Text style={styles.saveConfigBtnText}>Save Configuration</Text></TouchableOpacity>
       </View>
+        </View>
+      </View>
 
       <FieldPropertiesModal visible={!!editingField} field={editingField} onClose={() => setEditingField(null)} onSave={handleSaveField} />
 
@@ -273,6 +279,8 @@ const DEMO_HISTORY: HistoryEntry[] = [
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border },
   templateBadge: { backgroundColor: colors.statusApprovedBg, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.pill },
   templateBadgeCustom: { backgroundColor: colors.statusPendingBg },

@@ -350,9 +350,9 @@ export default function StaffAccountManagementScreen({ navigation }: NativeStack
 
   return (
     <SafeAreaView style={styles.safe}>
-      <SystemAdminNav activeTab="Staff Accounts" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} />
+      <SystemAdminNav activeTab="Staff Accounts" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} sectionTitle="Staff Account Management" />
       <View style={styles.body}>
-        <SystemAdminSidebar activeRoute="StaffAccountManagement" onNavigate={(r) => navigation?.navigate?.(r)} />
+        <SystemAdminSidebar activeRoute="StaffAccountManagement" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="SYSTEM CONFIGURATION" />
         <View style={styles.contentArea}>
           <View style={styles.header}>
         <Text style={typography.h1}>Staff Account Management</Text>

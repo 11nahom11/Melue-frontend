@@ -10,6 +10,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getClinicalCategories, saveClinicalCategory, updateClinicalCategory, deleteClinicalCategory } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList, Payload } from '../../types';
 
@@ -93,8 +94,11 @@ export default function ClinicalCategoriesConfigScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Programs" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} />
-      <View style={styles.header}><Text style={typography.h1}>Clinical Categories</Text><Text style={typography.caption}>MR-6 — programs, assessment types, and therapy types</Text></View>
+      <InstitutionalAdminNav activeTab="Programs" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Clinical Categories" />
+      <View style={styles.body}>
+        <InstitutionalAdminSidebar activeRoute="ClinicalCategoriesConfig" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
+        <View style={styles.contentArea}>
+          <View style={styles.header}><Text style={typography.h1}>Clinical Categories</Text><Text style={typography.caption}>MR-6 — programs, assessment types, and therapy types</Text></View>
 
       <View style={styles.sectionTabs}>
         {SECTIONS.map((s) => (
@@ -163,6 +167,8 @@ export default function ClinicalCategoriesConfigScreen({ navigation }: Props) {
           ))}
         </View>
       </ScrollView>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -189,6 +195,8 @@ const DEFAULT_LISTS: Record<CategoryKey, CategoryItem[]> = {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
+  body: { flex: 1, flexDirection: 'row' },
+  contentArea: { flex: 1 },
   header: { padding: spacing.lg, backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.xs },
   sectionTabs: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, paddingBottom: 0 },
   sectionTab: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard },

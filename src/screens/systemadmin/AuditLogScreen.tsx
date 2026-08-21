@@ -69,9 +69,9 @@ export default function AuditLogScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <SystemAdminNav activeTab="Audit Log" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} />
+      <SystemAdminNav activeTab="Audit Log" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} sectionTitle="Audit Log" />
       <View style={styles.body}>
-        <SystemAdminSidebar activeRoute="AuditLog" onNavigate={(r) => navigation?.navigate?.(r)} />
+        <SystemAdminSidebar activeRoute="AuditLog" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="SYSTEM CONFIGURATION" />
         <View style={styles.contentArea}>
 
       <View style={styles.header}>

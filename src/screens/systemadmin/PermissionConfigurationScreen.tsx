@@ -80,9 +80,9 @@ export default function PermissionConfigurationScreen({ navigation }: NativeStac
 
   return (
     <SafeAreaView style={styles.safe}>
-      <SystemAdminNav activeTab="Permissions" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} />
+      <SystemAdminNav activeTab="Permissions" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} sectionTitle="Permission Configuration" />
       <View style={styles.body}>
-        <SystemAdminSidebar activeRoute="PermissionConfiguration" onNavigate={(r) => navigation?.navigate?.(r)} />
+        <SystemAdminSidebar activeRoute="PermissionConfiguration" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="SYSTEM CONFIGURATION" />
         <View style={styles.contentArea}>
           <View style={styles.header}><Text style={typography.h1}>Permission Configuration</Text></View>
 
