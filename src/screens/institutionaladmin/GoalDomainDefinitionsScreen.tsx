@@ -99,9 +99,9 @@ export default function GoalDomainDefinitionsScreen({ navigation }: NativeStackS
                     <>
                       <View style={[styles.tdCell, { flex: 0.8 }]}>
                         <View style={styles.orderCol}>
-                          <TouchableOpacity onPress={() => moveUp(d.id)}><Feather name="arrow-up" size={14} color={colors.skyDark} /></TouchableOpacity>
+                          <TouchableOpacity onPress={() => moveUp(d.id)}><Feather name="arrow-up" size={14} color={colors.mutedText} /></TouchableOpacity>
                           <Text style={styles.orderNum}>{d.order}</Text>
-                          <TouchableOpacity onPress={() => moveDown(d.id)}><Feather name="arrow-down" size={14} color={colors.skyDark} /></TouchableOpacity>
+                          <TouchableOpacity onPress={() => moveDown(d.id)}><Feather name="arrow-down" size={14} color={colors.mutedText} /></TouchableOpacity>
                         </View>
                       </View>
                       <View style={[styles.tdCell, { flex: 1.5 }]}>
@@ -124,9 +124,9 @@ export default function GoalDomainDefinitionsScreen({ navigation }: NativeStackS
                     <>
                       <View style={[styles.tdCell, { flex: 0.8 }]}>
                         <View style={styles.orderCol}>
-                          <TouchableOpacity onPress={() => moveUp(d.id)}><Feather name="arrow-up" size={14} color={colors.skyDark} /></TouchableOpacity>
+                          <TouchableOpacity onPress={() => moveUp(d.id)}><Feather name="arrow-up" size={14} color={colors.mutedText} /></TouchableOpacity>
                           <Text style={styles.orderNum}>{d.order}</Text>
-                          <TouchableOpacity onPress={() => moveDown(d.id)}><Feather name="arrow-down" size={14} color={colors.skyDark} /></TouchableOpacity>
+                          <TouchableOpacity onPress={() => moveDown(d.id)}><Feather name="arrow-down" size={14} color={colors.mutedText} /></TouchableOpacity>
                         </View>
                       </View>
                       <Text style={[styles.tdCellText, { flex: 1.5, fontWeight: '600' }]}>{d.name}</Text>
@@ -170,7 +170,7 @@ export default function GoalDomainDefinitionsScreen({ navigation }: NativeStackS
               </View>
             ) : (
               <TouchableOpacity style={styles.addLink} onPress={() => setAddingDomain(true)}>
-                <Feather name="plus" size={14} color={colors.skyDark} />
+                <Feather name="plus" size={14} color="#0284C7" />
                 <Text style={styles.addLinkText}>Add Domain</Text>
               </TouchableOpacity>
             )}
@@ -179,6 +179,9 @@ export default function GoalDomainDefinitionsScreen({ navigation }: NativeStackS
               <Feather name="save" size={14} color={colors.navyText} />
               <Text style={styles.saveBtnText}>Save Configuration</Text>
             </TouchableOpacity>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2026 Melu'e Foundation. All rights reserved.</Text>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -190,7 +193,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 1024, alignSelf: 'center', width: '100%' },
   headerLeft: { gap: 2 },
   card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.xs },
   tableHeader: { flexDirection: 'row', backgroundColor: colors.bgTableHeader, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
@@ -214,7 +217,9 @@ const styles = StyleSheet.create({
   cancelBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
   cancelBtnText: { fontSize: 12, fontWeight: '600', color: colors.bodyText },
   addLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
-  addLinkText: { fontSize: 13, fontWeight: '600', color: colors.skyDark },
+  addLinkText: { fontSize: 13, fontWeight: '600', color: '#0284C7' },
   saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2, alignSelf: 'flex-start' },
   saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
+  footer: { alignItems: 'center', paddingVertical: spacing.xl },
+  footerText: { fontSize: 12, color: colors.mutedText },
 });

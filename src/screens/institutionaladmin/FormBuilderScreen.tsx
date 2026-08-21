@@ -12,16 +12,7 @@ import type { InstitutionalAdminStackParamList } from '../../types';
 const FORMS = ['Enrollment Wizard', 'IUP Form', 'ABLLS Assessment Form'];
 const FIELD_TYPES = ['Text', 'Number', 'Date', 'Dropdown', 'Checkbox', 'Radio', 'TextArea', 'File'];
 
-const TYPE_BADGE: Record<string, { bg: string; text: string }> = {
-  Text: { bg: '#DBEAFE', text: '#1D4ED8' },
-  Number: { bg: '#D1FAE5', text: '#059669' },
-  Date: { bg: '#FCE7F3', text: '#BE185D' },
-  Dropdown: { bg: '#E0E7FF', text: '#4338CA' },
-  Checkbox: { bg: '#FEF3C7', text: '#B45309' },
-  Radio: { bg: '#EDE9FE', text: '#7C3AED' },
-  TextArea: { bg: '#FFEDD5', text: '#C2410C' },
-  File: { bg: '#F3F4F6', text: '#6B7280' },
-};
+const TYPE_BADGE_STYLE = { bg: '#EFF6FF', text: '#0284C7' };
 
 interface FormField {
   id: string;
@@ -29,14 +20,6 @@ interface FormField {
   label: string;
   required: boolean;
   visible: boolean;
-}
-
-interface HistoryEntry {
-  date: string;
-  user: string;
-  field: string;
-  oldValue: string;
-  newValue: string;
 }
 
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
@@ -50,8 +33,7 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
 export default function FormBuilderScreen({ navigation }: NativeStackScreenProps<InstitutionalAdminStackParamList, 'FormBuilder'>) {
   const [selectedForm, setSelectedForm] = useState(FORMS[0]);
   const [fields, setFields] = useState<FormField[]>([]);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [historyOpen, setHistoryOpen] = useState(false);
+
   const [previewOpen, setPreviewOpen] = useState(false);
   const [addingField, setAddingField] = useState(false);
   const [newFieldType, setNewFieldType] = useState('Text');
@@ -64,11 +46,10 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
       const { data } = await getFormConfig(selectedForm);
       setFields(data.fields);
       setIsCustomTemplate(!data.isDefault);
-      setHistory(data.history || []);
     } catch {
       setFields(DEMO_FIELDS[selectedForm] || []);
       setIsCustomTemplate(false);
-      setHistory(DEMO_HISTORY);
+
     }
   }, [selectedForm]);
 
@@ -132,11 +113,17 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
             </View>
 
             <View style={styles.controlsRow}>
-              {FORMS.map((f) => (
-                <TouchableOpacity key={f} style={[styles.formChip, selectedForm === f && styles.formChipActive]} onPress={() => setSelectedForm(f)}>
-                  <Text style={[styles.formChipText, selectedForm === f && styles.formChipTextActive]}>{f}</Text>
-                </TouchableOpacity>
-              ))}
+              <View style={styles.selectWrap}>
+                <Text style={typography.label}>Select Form</Text>
+                <View style={styles.selectBox}>
+                  {FORMS.map((f) => (
+                    <TouchableOpacity key={f} style={[styles.selectOption, selectedForm === f && styles.selectOptionActive]} onPress={() => setSelectedForm(f)}>
+                      <Text style={[styles.selectOptionText, selectedForm === f && styles.selectOptionTextActive]}>{f}</Text>
+                      {selectedForm === f && <Feather name="check" size={12} color={colors.navyText} />}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
               <View style={[styles.templateBadge, isCustomTemplate ? styles.templateBadgeCustom : styles.templateBadgeDefault]}>
                 <Text style={[styles.templateBadgeText, { color: isCustomTemplate ? colors.statusPendingText : colors.statusApprovedText }]}>
                   {isCustomTemplate ? 'Custom Template' : 'Using Default Template'}
@@ -147,7 +134,7 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
             <View style={styles.canvas}>
               <Text style={styles.canvasTitle}>Form Canvas — {selectedForm}</Text>
               {fields.map((field) => {
-                const badge = TYPE_BADGE[field.type] || TYPE_BADGE.Text;
+                const badge = TYPE_BADGE_STYLE;
                 return (
                   <View key={field.id} style={styles.fieldRow}>
                     <View style={[styles.typeBadge, { backgroundColor: badge.bg }]}>
@@ -226,31 +213,8 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
               </TouchableOpacity>
             </View>
 
-            <View style={styles.historyCard}>
-              <TouchableOpacity style={styles.historyHeader} onPress={() => setHistoryOpen((h) => !h)}>
-                <Text style={styles.historyHeaderText}>Modification History</Text>
-                <Feather name={historyOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#374151" />
-              </TouchableOpacity>
-              {historyOpen && (
-                <View>
-                  <View style={[styles.tableRow, styles.tableHeadRow]}>
-                    <Text style={[styles.col, styles.tableHeadCell, { flex: 1.1 }]}>Date</Text>
-                    <Text style={[styles.col, styles.tableHeadCell, { flex: 0.9 }]}>User</Text>
-                    <Text style={[styles.col, styles.tableHeadCell, { flex: 1.2 }]}>Field</Text>
-                    <Text style={[styles.col, styles.tableHeadCell, { flex: 0.9 }]}>Old Value</Text>
-                    <Text style={[styles.col, styles.tableHeadCell, { flex: 0.9 }]}>New Value</Text>
-                  </View>
-                  {history.map((row, i) => (
-                    <View key={i} style={[styles.tableRow, i > 0 && styles.tableRowBordered]}>
-                      <Text style={[styles.col, styles.cellMuted, { flex: 1.1 }]}>{row.date}</Text>
-                      <Text style={[styles.col, styles.cellStrong, { flex: 0.9 }]}>{row.user}</Text>
-                      <Text style={[styles.col, styles.cellBody, { flex: 1.2 }]}>{row.field}</Text>
-                      <Text style={[styles.col, styles.cellOld, { flex: 0.9 }]}>{row.oldValue}</Text>
-                      <Text style={[styles.col, styles.cellNew, { flex: 0.9 }]}>{row.newValue}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2026 Melu'e Foundation. All rights reserved.</Text>
             </View>
           </ScrollView>
         </View>
@@ -312,24 +276,20 @@ const DEMO_FIELDS: Record<string, FormField[]> = {
   ],
 };
 
-const DEMO_HISTORY: HistoryEntry[] = [
-  { date: '2025-07-28', user: 'Admin A', field: 'Program Type', oldValue: 'Text', newValue: 'Dropdown' },
-  { date: '2025-07-15', user: 'Admin A', field: 'Phone', oldValue: 'Hidden', newValue: 'Visible' },
-  { date: '2025-06-30', user: 'Sysadmin', field: 'Date of Birth', oldValue: 'Optional', newValue: 'Required' },
-];
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  content: { padding: spacing.lg, gap: spacing.lg },
+  content: { padding: spacing.lg, gap: spacing.lg, maxWidth: 1024, alignSelf: 'center', width: '100%' },
   sectionHeader: { gap: spacing.xs },
   sectionDesc: { fontSize: 13, fontWeight: '400', color: colors.bodyText },
-  controlsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
-  formChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard },
-  formChipActive: { backgroundColor: colors.primaryYellow, borderColor: colors.primaryYellow },
-  formChipText: { fontSize: 13, fontWeight: '600', color: colors.bodyText },
-  formChipTextActive: { color: colors.navyText },
+  controlsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', gap: spacing.md },
+  selectWrap: { minWidth: 220 },
+  selectBox: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.bgCard, overflow: 'hidden' },
+  selectOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  selectOptionActive: { backgroundColor: '#FEF3C7' },
+  selectOptionText: { fontSize: 13, color: colors.bodyText },
+  selectOptionTextActive: { color: colors.navyText, fontWeight: '600' },
   templateBadge: { marginLeft: 'auto', paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill },
   templateBadgeDefault: { backgroundColor: colors.statusApprovedBg },
   templateBadgeCustom: { backgroundColor: colors.statusPendingBg },
@@ -368,19 +328,6 @@ const styles = StyleSheet.create({
   ghostBtnText: { fontSize: 13, fontWeight: '600', color: colors.bodyText },
   dangerGhostBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1, borderColor: '#FCA5A5', borderRadius: radius.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, backgroundColor: colors.bgCard },
   dangerGhostBtnText: { fontSize: 13, fontWeight: '600', color: '#DC2626' },
-  historyCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.bgCard },
-  historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, backgroundColor: colors.bgTableHeader },
-  historyHeaderText: { fontSize: 13, fontWeight: '600', color: colors.navyText },
-  tableRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: 10 },
-  tableRowBordered: { borderTopWidth: 1, borderTopColor: colors.border },
-  tableHeadRow: { backgroundColor: colors.bgTableHeader, borderTopWidth: 1, borderTopColor: colors.border },
-  tableHeadCell: { fontSize: 10, fontWeight: '600', color: colors.mutedText, textTransform: 'uppercase', letterSpacing: 0.5 },
-  col: { paddingRight: spacing.xs },
-  cellMuted: { fontSize: 12, fontWeight: '400', color: colors.bodyText },
-  cellStrong: { fontSize: 12, fontWeight: '600', color: colors.navyText },
-  cellBody: { fontSize: 12, fontWeight: '400', color: colors.bodyText },
-  cellOld: { fontSize: 12, fontWeight: '500', color: '#DC2626' },
-  cellNew: { fontSize: 12, fontWeight: '500', color: '#16A34A' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
   previewCard: { width: '100%', maxWidth: 480, backgroundColor: colors.bgCard, borderRadius: radius.lg, padding: spacing.xl },
   previewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
@@ -391,4 +338,6 @@ const styles = StyleSheet.create({
   previewPlaceholder: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 10, backgroundColor: colors.bgApp },
   previewPlaceholderText: { fontSize: 13, fontWeight: '400', color: colors.mutedText },
   previewFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: spacing.lg },
+  footer: { alignItems: 'center', paddingVertical: spacing.xl },
+  footerText: { fontSize: 12, color: colors.mutedText },
 });

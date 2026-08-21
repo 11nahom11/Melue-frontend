@@ -78,7 +78,7 @@ export default function TaskAnalysisTemplatesScreen({ navigation }: NativeStackS
                 <Text style={typography.h3}>Templates</Text>
                 {!addingTemplate && (
                   <TouchableOpacity style={styles.addLink} onPress={() => setAddingTemplate(true)}>
-                    <Feather name="plus" size={14} color={colors.skyDark} />
+                    <Feather name="plus" size={14} color="#0284C7" />
                     <Text style={styles.addLinkText}>Add Template</Text>
                   </TouchableOpacity>
                 )}
@@ -129,13 +129,13 @@ export default function TaskAnalysisTemplatesScreen({ navigation }: NativeStackS
                       <View key={i} style={styles.stepRow}>
                         <Text style={styles.stepNum}>{i + 1}.</Text>
                         <TextInput style={styles.stepInput} value={step} onChangeText={(v: string) => setSteps((s) => s.map((x, idx) => (idx === i ? v : x)))} placeholder={`Step ${i + 1}...`} placeholderTextColor={colors.mutedText} />
-                        <TouchableOpacity onPress={() => moveStepUp(i)}><Feather name="arrow-up" size={14} color={colors.skyDark} /></TouchableOpacity>
-                        <TouchableOpacity onPress={() => moveStepDown(i)}><Feather name="arrow-down" size={14} color={colors.skyDark} /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => moveStepUp(i)}><Feather name="arrow-up" size={14} color={colors.mutedText} /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => moveStepDown(i)}><Feather name="arrow-down" size={14} color={colors.mutedText} /></TouchableOpacity>
                         <TouchableOpacity onPress={() => removeStep(i)}><Feather name="trash-2" size={14} color={colors.danger} /></TouchableOpacity>
                       </View>
                     ))}
                     <TouchableOpacity style={styles.addStepLink} onPress={addStep}>
-                      <Feather name="plus" size={13} color={colors.skyDark} />
+                      <Feather name="plus" size={13} color="#0284C7" />
                       <Text style={styles.addStepLinkText}>Add Step</Text>
                     </TouchableOpacity>
                   </View>
@@ -162,6 +162,9 @@ export default function TaskAnalysisTemplatesScreen({ navigation }: NativeStackS
                 </View>
               </View>
             )}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2026 Melu'e Foundation. All rights reserved.</Text>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -173,7 +176,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 1024, alignSelf: 'center', width: '100%' },
   headerLeft: { gap: 2 },
   card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.xs },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
@@ -186,7 +189,7 @@ const styles = StyleSheet.create({
   activeBadgeText: { fontSize: 10, fontWeight: '700', color: '#059669' },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   addLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  addLinkText: { fontSize: 13, fontWeight: '600', color: colors.skyDark },
+  addLinkText: { fontSize: 13, fontWeight: '600', color: '#0284C7' },
   addTemplateCard: { borderWidth: 1, borderColor: '#38BDF8', borderRadius: radius.lg, padding: spacing.lg, backgroundColor: '#EFF6FF', gap: spacing.md },
   addTemplateGrid: { flexDirection: 'row', gap: spacing.md },
   inlineInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs + 2, fontSize: 12, color: colors.navyText, backgroundColor: colors.bgCard },
@@ -195,11 +198,13 @@ const styles = StyleSheet.create({
   stepNum: { fontSize: 11, fontFamily: 'monospace', color: colors.mutedText, width: 20 },
   stepInput: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, fontSize: 12, color: colors.navyText, backgroundColor: colors.bgCard },
   addStepLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
-  addStepLinkText: { fontSize: 12, fontWeight: '600', color: colors.skyDark },
+  addStepLinkText: { fontSize: 12, fontWeight: '600', color: '#0284C7' },
   masteryRow: { flexDirection: 'row', gap: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
   formActions: { flexDirection: 'row', gap: spacing.sm },
   saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2 },
   saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
   cancelBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
   cancelBtnText: { fontSize: 13, fontWeight: '600', color: colors.bodyText },
+  footer: { alignItems: 'center', paddingVertical: spacing.xl },
+  footerText: { fontSize: 12, color: colors.mutedText },
 });

@@ -63,7 +63,7 @@ export default function RoleManagementScreen({ navigation }: NativeStackScreenPr
                 <Text style={typography.h3}>Roles</Text>
                 {!addingRole && (
                   <TouchableOpacity style={styles.addLink} onPress={() => setAddingRole(true)}>
-                    <Feather name="plus" size={14} color={colors.skyDark} />
+                    <Feather name="plus" size={14} color="#0284C7" />
                     <Text style={styles.addLinkText}>Add Role</Text>
                   </TouchableOpacity>
                 )}
@@ -118,6 +118,9 @@ export default function RoleManagementScreen({ navigation }: NativeStackScreenPr
               <Feather name="save" size={14} color={colors.navyText} />
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2026 Melu'e Foundation. All rights reserved.</Text>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -129,7 +132,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 1024, alignSelf: 'center', width: '100%' },
   headerLeft: { gap: 2 },
   card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.xs },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
@@ -145,7 +148,9 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   inlineInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs + 2, fontSize: 12, color: colors.navyText, backgroundColor: colors.bgCard },
   addLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  addLinkText: { fontSize: 13, fontWeight: '600', color: colors.skyDark },
+  addLinkText: { fontSize: 13, fontWeight: '600', color: '#0284C7' },
   saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2, alignSelf: 'flex-start' },
   saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
+  footer: { alignItems: 'center', paddingVertical: spacing.xl },
+  footerText: { fontSize: 12, color: colors.mutedText },
 });

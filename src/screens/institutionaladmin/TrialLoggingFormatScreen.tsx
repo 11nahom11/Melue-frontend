@@ -88,7 +88,7 @@ export default function TrialLoggingFormatScreen({ navigation }: NativeStackScre
                 <Text style={typography.h3}>Prompt Levels</Text>
                 {!addingLevel && (
                   <TouchableOpacity style={styles.addLink} onPress={() => setAddingLevel(true)}>
-                    <Feather name="plus" size={14} color={colors.skyDark} />
+                    <Feather name="plus" size={14} color="#0284C7" />
                     <Text style={styles.addLinkText}>Add Prompt Level</Text>
                   </TouchableOpacity>
                 )}
@@ -239,6 +239,9 @@ export default function TrialLoggingFormatScreen({ navigation }: NativeStackScre
               <Feather name="save" size={14} color={colors.navyText} />
               <Text style={styles.saveBtnText}>Save Configuration</Text>
             </TouchableOpacity>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2026 Melu'e Foundation. All rights reserved.</Text>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -257,12 +260,12 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 1024, alignSelf: 'center', width: '100%' },
   headerLeft: { gap: 2 },
   card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.sm },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   addLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  addLinkText: { fontSize: 13, fontWeight: '600', color: colors.skyDark },
+  addLinkText: { fontSize: 13, fontWeight: '600', color: '#0284C7' },
   tableHeader: { flexDirection: 'row', backgroundColor: colors.bgTableHeader, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm, marginBottom: spacing.xs },
   thCell: { fontSize: 10, fontWeight: '700', color: colors.mutedText, textTransform: 'uppercase', letterSpacing: 0.5 },
   tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
@@ -297,4 +300,6 @@ const styles = StyleSheet.create({
   toggleThumbOn: { alignSelf: 'flex-end' },
   saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2, alignSelf: 'flex-start' },
   saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
+  footer: { alignItems: 'center', paddingVertical: spacing.xl },
+  footerText: { fontSize: 12, color: colors.mutedText },
 });

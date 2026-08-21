@@ -233,6 +233,9 @@ export default function StaffAccountManagementScreen({ navigation }: NativeStack
                 </View>
               )}
             </View>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2026 Melu'e Foundation. All rights reserved.</Text>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -265,7 +268,7 @@ const styles = StyleSheet.create({
   typeChipText: { fontSize: 10, fontWeight: '600', color: colors.bodyText },
   typeChipTextActive: { color: colors.navyText },
   bulkBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, backgroundColor: '#EFF6FF', borderRadius: radius.lg, borderWidth: 1, borderColor: '#BFDBFE' },
-  bulkText: { fontSize: 12, fontWeight: '600', color: colors.skyDark },
+  bulkText: { fontSize: 12, fontWeight: '600', color: '#0284C7' },
   tableAndDetail: { flexDirection: 'row', gap: spacing.lg },
   card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   tableHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bgTableHeader, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
@@ -290,4 +293,6 @@ const styles = StyleSheet.create({
   detailField: { gap: 2 },
   detailLabel: { fontSize: 11, color: colors.mutedText },
   detailValue: { fontSize: 13, fontWeight: '600', color: colors.navyText },
+  footer: { alignItems: 'center', paddingVertical: spacing.xl },
+  footerText: { fontSize: 12, color: colors.mutedText },
 });

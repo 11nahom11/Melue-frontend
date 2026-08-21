@@ -155,7 +155,7 @@ export default function AbcDropdownListsScreen({ navigation }: NativeStackScreen
                   </View>
                 ) : (
                   <TouchableOpacity style={styles.addLink} onPress={() => setAddingBehavior(true)}>
-                    <Feather name="plus" size={14} color={colors.skyDark} />
+                    <Feather name="plus" size={14} color="#0284C7" />
                     <Text style={styles.addLinkText}>Add Behavior</Text>
                   </TouchableOpacity>
                 )}
@@ -250,6 +250,9 @@ export default function AbcDropdownListsScreen({ navigation }: NativeStackScreen
                 <Text style={styles.saveBtnText}>Save Configuration</Text>
               </TouchableOpacity>
             </View>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2026 Melu'e Foundation. All rights reserved.</Text>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -261,13 +264,13 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 1024, alignSelf: 'center', width: '100%' },
   headerLeft: { gap: 2 },
   tabBar: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border },
   tab: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabActive: { borderBottomColor: colors.skyAccent },
   tabText: { fontSize: 13, fontWeight: '600', color: colors.mutedText },
-  tabTextActive: { color: colors.skyDark },
+  tabTextActive: { color: '#0284C7' },
   tabIndicator: { position: 'absolute', bottom: -1, left: 0, right: 0, height: 2, backgroundColor: colors.skyAccent },
   card: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.xs },
   tableHeader: { flexDirection: 'row', backgroundColor: colors.bgTableHeader, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
@@ -283,11 +286,13 @@ const styles = StyleSheet.create({
   inactiveBadgeText: { fontSize: 10, fontWeight: '700', color: '#6B7280' },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   addLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
-  addLinkText: { fontSize: 13, fontWeight: '600', color: colors.skyDark },
+  addLinkText: { fontSize: 13, fontWeight: '600', color: '#0284C7' },
   inlineInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, fontSize: 12, color: colors.navyText, backgroundColor: colors.bgCard },
   bottomActions: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'flex-end' },
   ghostDangerBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, borderRadius: radius.md, borderWidth: 1, borderColor: '#FCA5A5', backgroundColor: colors.bgCard },
   ghostDangerBtnText: { fontSize: 13, fontWeight: '600', color: colors.danger },
   saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2 },
   saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
+  footer: { alignItems: 'center', paddingVertical: spacing.xl },
+  footerText: { fontSize: 12, color: colors.mutedText },
 });

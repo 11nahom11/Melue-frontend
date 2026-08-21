@@ -200,6 +200,9 @@ export default function PermissionConfigurationScreen({ navigation }: NativeStac
                 <Text style={styles.auditLinkText}>View Audit Trail</Text>
               </TouchableOpacity>
             </View>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2026 Melu'e Foundation. All rights reserved.</Text>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -211,7 +214,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgApp },
   body: { flex: 1, flexDirection: 'row' },
   contentArea: { flex: 1 },
-  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 900, alignSelf: 'center', width: '100%' },
+  scrollContent: { padding: spacing.xl, gap: spacing.lg, maxWidth: 1024, alignSelf: 'center', width: '100%' },
   headerLeft: { gap: 2 },
   controlsRow: { gap: spacing.sm },
   roleChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
@@ -241,5 +244,7 @@ const styles = StyleSheet.create({
   saveBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.primaryYellow, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2 },
   saveBtnText: { fontSize: 13, fontWeight: '700', color: colors.navyText },
   auditLink: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  auditLinkText: { fontSize: 13, fontWeight: '600', color: colors.skyDark, textDecorationLine: 'underline' },
+  auditLinkText: { fontSize: 13, fontWeight: '600', color: '#0284C7', textDecorationLine: 'underline' },
+  footer: { alignItems: 'center', paddingVertical: spacing.xl },
+  footerText: { fontSize: 12, color: colors.mutedText },
 });
