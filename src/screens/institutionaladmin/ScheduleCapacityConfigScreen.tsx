@@ -6,7 +6,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAr
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminNav from './components/InstitutionalAdminNav';
 import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getScheduleCapacityConfig, saveScheduleCapacityConfig } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
@@ -56,7 +56,7 @@ export default function ScheduleCapacityConfigScreen({ navigation }: NativeStack
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Schedule" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Session Schedule & Capacity" />
+      <InstitutionalAdminNav sectionTitle="Session Schedule & Capacity" breadcrumb="Clinical Configuration / Session Schedule & Capacity" scrCode="SCR-ADMIN-004" />
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="ScheduleCapacityConfig" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>

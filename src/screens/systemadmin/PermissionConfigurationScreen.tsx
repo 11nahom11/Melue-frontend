@@ -6,7 +6,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Ale
 import { Feather } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import SystemAdminNav, { SYS_ROUTE_BY_TAB } from './components/SystemAdminNav';
+import SystemAdminNav from './components/SystemAdminNav';
 import SystemAdminSidebar from './components/SystemAdminSidebar';
 import { getRoles, getPermissionMatrix, savePermissionMatrix, getPermissionAuditTrail } from '../../api/systemAdminApi';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -80,7 +80,7 @@ export default function PermissionConfigurationScreen({ navigation }: NativeStac
 
   return (
     <SafeAreaView style={styles.safe}>
-      <SystemAdminNav activeTab="Permissions" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} sectionTitle="Permission Configuration" />
+      <SystemAdminNav sectionTitle="Permission Configuration" breadcrumb="System Configuration / Permission Configuration" scrCode="SCR-SYS-003" />
       <View style={styles.body}>
         <SystemAdminSidebar activeRoute="PermissionConfiguration" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="SYSTEM CONFIGURATION" />
         <View style={styles.contentArea}>

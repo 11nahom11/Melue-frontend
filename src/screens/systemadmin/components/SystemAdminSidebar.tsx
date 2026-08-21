@@ -6,7 +6,6 @@ const SIDEBAR_ITEMS = [
   { label: 'Staff Accounts', icon: 'users' as const, route: 'StaffAccountManagement' },
   { label: 'Role Management', icon: 'shield' as const, route: 'RoleManagement' },
   { label: 'Permissions', icon: 'lock' as const, route: 'PermissionConfiguration' },
-  { label: 'Audit Log', icon: 'list' as const, route: 'AuditLog' },
 ];
 
 interface SystemAdminSidebarProps {

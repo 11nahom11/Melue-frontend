@@ -7,7 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminNav from './components/InstitutionalAdminNav';
 import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getGoalDomains, saveGoalDomains } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
@@ -51,7 +51,7 @@ export default function GoalDomainDefinitionsScreen({ navigation }: NativeStackS
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Goal Domains" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Goal Domain Definitions" />
+      <InstitutionalAdminNav sectionTitle="Goal Domain Definitions" breadcrumb="Clinical Configuration / Goal Domain Definitions" scrCode="SCR-ADMIN-005" />
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="GoalDomainDefinitions" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>

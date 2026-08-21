@@ -7,10 +7,6 @@ import AbcDropdownListsScreen from '../screens/institutionaladmin/AbcDropdownLis
 import ScheduleCapacityConfigScreen from '../screens/institutionaladmin/ScheduleCapacityConfigScreen';
 import GoalDomainDefinitionsScreen from '../screens/institutionaladmin/GoalDomainDefinitionsScreen';
 import TaskAnalysisTemplatesScreen from '../screens/institutionaladmin/TaskAnalysisTemplatesScreen';
-import ClinicInfoConfigScreen from '../screens/institutionaladmin/ClinicInfoConfigScreen';
-import WorkingHoursConfigScreen from '../screens/institutionaladmin/WorkingHoursConfigScreen';
-import SchoolSettingsConfigScreen from '../screens/institutionaladmin/SchoolSettingsConfigScreen';
-import ClinicalCategoriesConfigScreen from '../screens/institutionaladmin/ClinicalCategoriesConfigScreen';
 
 const Stack = createNativeStackNavigator<InstitutionalAdminStackParamList>();
 
@@ -23,10 +19,6 @@ export default function InstitutionalAdminStack() {
       <Stack.Screen name="ScheduleCapacityConfig" component={ScheduleCapacityConfigScreen} />
       <Stack.Screen name="GoalDomainDefinitions" component={GoalDomainDefinitionsScreen} />
       <Stack.Screen name="TaskAnalysisTemplates" component={TaskAnalysisTemplatesScreen} />
-      <Stack.Screen name="ClinicInfoConfig" component={ClinicInfoConfigScreen} />
-      <Stack.Screen name="WorkingHoursConfig" component={WorkingHoursConfigScreen} />
-      <Stack.Screen name="SchoolSettingsConfig" component={SchoolSettingsConfigScreen} />
-      <Stack.Screen name="ClinicalCategoriesConfig" component={ClinicalCategoriesConfigScreen} />
     </Stack.Navigator>
   );
 }

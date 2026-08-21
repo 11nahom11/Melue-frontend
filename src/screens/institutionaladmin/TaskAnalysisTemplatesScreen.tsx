@@ -9,7 +9,7 @@ import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminNav from './components/InstitutionalAdminNav';
 import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getTaskAnalysisTemplates, saveTaskAnalysisTemplate, deleteTaskAnalysisTemplate } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
@@ -153,7 +153,7 @@ export default function TaskAnalysisTemplatesScreen({ navigation }: NativeStackS
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Task Analysis" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Task Analysis Templates" />
+      <InstitutionalAdminNav sectionTitle="Task Analysis Templates" breadcrumb="Clinical Configuration / Task Analysis Templates" scrCode="SCR-ADMIN-006" />
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="TaskAnalysisTemplates" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>

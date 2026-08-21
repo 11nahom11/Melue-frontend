@@ -3,16 +3,12 @@ import AdminSidebar from '../../../components/AdminSidebar';
 import type { InstitutionalAdminStackParamList } from '../../../types';
 
 const SIDEBAR_ITEMS = [
-  { label: 'Form Builder', icon: 'file-text' as const, route: 'FormBuilder' },
-  { label: 'Trial Logging', icon: 'layers' as const, route: 'TrialLoggingFormat' },
-  { label: 'ABC Dropdowns', icon: 'list' as const, route: 'AbcDropdownLists' },
+  { label: 'Form Builder', icon: 'clipboard' as const, route: 'FormBuilder' },
+  { label: 'Trial Logging', icon: 'bar-chart-2' as const, route: 'TrialLoggingFormat' },
+  { label: 'ABC Dropdowns', icon: 'list-checks' as const, route: 'AbcDropdownLists' },
   { label: 'Session Schedule', icon: 'calendar' as const, route: 'ScheduleCapacityConfig' },
   { label: 'Goal Domains', icon: 'target' as const, route: 'GoalDomainDefinitions' },
-  { label: 'Task Analysis', icon: 'check-square' as const, route: 'TaskAnalysisTemplates' },
-  { label: 'Clinical Categories', icon: 'folder' as const, route: 'ClinicalCategoriesConfig' },
-  { label: 'Clinic Info', icon: 'info' as const, route: 'ClinicInfoConfig' },
-  { label: 'Working Hours', icon: 'clock' as const, route: 'WorkingHoursConfig' },
-  { label: 'School Settings', icon: 'book-open' as const, route: 'SchoolSettingsConfig' },
+  { label: 'Task Analysis', icon: 'layers' as const, route: 'TaskAnalysisTemplates' },
 ];
 
 interface InstitutionalAdminSidebarProps {

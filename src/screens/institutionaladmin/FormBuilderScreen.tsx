@@ -13,7 +13,7 @@ import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminNav from './components/InstitutionalAdminNav';
 import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import ExportPreviewModal from '../../components/ExportPreviewModal';
 import { getFormConfig, saveFormConfig, resetFormToDefault } from '../../api/institutionalAdminApi';
@@ -171,7 +171,7 @@ export default function FormBuilderScreen({ navigation }: NativeStackScreenProps
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Forms" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Form Builder" />
+      <InstitutionalAdminNav sectionTitle="Form Builder" breadcrumb="Clinical Configuration / Form Builder" scrCode="SCR-ADMIN-001" />
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="FormBuilder" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>

@@ -6,7 +6,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAr
 import { Feather } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import SystemAdminNav, { SYS_ROUTE_BY_TAB } from './components/SystemAdminNav';
+import SystemAdminNav from './components/SystemAdminNav';
 import SystemAdminSidebar from './components/SystemAdminSidebar';
 import { getRoles, createRole, updateRole, deleteRole } from '../../api/systemAdminApi';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -99,7 +99,7 @@ export default function RoleManagementScreen({ navigation }: NativeStackScreenPr
 
   return (
     <SafeAreaView style={styles.safe}>
-      <SystemAdminNav activeTab="Roles" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} sectionTitle="Role Management" />
+      <SystemAdminNav sectionTitle="Role Management" breadcrumb="System Configuration / Role Management" scrCode="SCR-SYS-002" />
       <View style={styles.body}>
         <SystemAdminSidebar activeRoute="RoleManagement" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="SYSTEM CONFIGURATION" />
         <View style={styles.contentArea}>

@@ -7,7 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminNav from './components/InstitutionalAdminNav';
 import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getTrialLoggingConfig, saveTrialLoggingConfig } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
@@ -66,7 +66,7 @@ export default function TrialLoggingFormatScreen({ navigation }: NativeStackScre
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="Trial Logging" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="Trial Logging Format" />
+      <InstitutionalAdminNav sectionTitle="Trial Logging Format" breadcrumb="Clinical Configuration / Trial Logging Format" scrCode="SCR-ADMIN-002" />
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="TrialLoggingFormat" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>

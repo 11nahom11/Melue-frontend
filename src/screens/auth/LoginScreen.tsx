@@ -19,17 +19,6 @@ import type { DemoAccount } from '../../types';
 
 const ALL_DEMO_ACCOUNTS: DemoAccount[] = [...DEMO_ACCOUNTS, ...EXTRA_ROLES];
 
-const ROLE_BADGE_COLORS: Record<string, { bg: string; text: string }> = {
-  system_admin: { bg: '#FEE2E2', text: '#DC2626' },
-  sysadmin: { bg: '#FEE2E2', text: '#DC2626' },
-  institutional_admin: { bg: '#FEF3C7', text: '#B45309' },
-  director: { bg: '#E0E7FF', text: '#4338CA' },
-  coordinator: { bg: '#EDE9FE', text: '#7C3AED' },
-  program_director: { bg: '#EDE9FE', text: '#7C3AED' },
-  teacher: { bg: '#DBEAFE', text: '#1D4ED8' },
-  parent: { bg: '#D1FAE5', text: '#059669' },
-};
-
 export default function LoginScreen() {
   const { loginAsRole } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<{ Login: undefined; ForgotPassword: undefined }>>();
@@ -40,9 +29,13 @@ export default function LoginScreen() {
 
   const handleSignIn = () => {
     setError('');
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
     const match = ALL_DEMO_ACCOUNTS.find((a) => a.email.toLowerCase() === email.trim().toLowerCase());
     if (!match) {
-      setError('Unknown demo account. Use one of the demo emails listed below (any password works).');
+      setError('Invalid email or password');
       return;
     }
     loginAsRole(match);
@@ -50,6 +43,7 @@ export default function LoginScreen() {
 
   const handleDemoTap = (account: DemoAccount) => {
     setEmail(account.email);
+    setPassword('demo');
     setError('');
     loginAsRole(account);
   };
@@ -58,45 +52,45 @@ export default function LoginScreen() {
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.card}>
-          <Image source={require('../../../assets/logo.png')} style={s.logo} resizeMode="contain" />
-          <Text style={s.brandName}>Melu'e Foundation</Text>
+          <View style={s.logoWrap}>
+            <Image source={require('../../../assets/logo.png')} style={s.logo} resizeMode="contain" />
+          </View>
 
           <Text style={typography.h1}>Sign In to Your Account</Text>
-          <Text style={[typography.body, { textAlign: 'center', marginTop: -4 }]}>
+          <Text style={[typography.small, { textAlign: 'center', color: colors.bodyText, marginBottom: spacing.sm }]}>
             Melu'e Foundation Therapy Portal
           </Text>
 
           {error ? (
             <View style={s.errorBanner}>
-              <Feather name="alert-circle" size={16} color="#DC2626" />
               <Text style={s.errorText}>{error}</Text>
             </View>
           ) : null}
 
           <View style={s.field}>
-            <Text style={typography.label}>Email Address</Text>
+            <Text style={s.fieldLabel}>Email Address</Text>
             <View style={s.inputRow}>
-              <Feather name="mail" size={16} color={colors.mutedText} />
+              <Feather name="mail" size={18} color="#9CA3AF" style={s.inputIcon} />
               <TextInput
                 style={s.input}
                 placeholder="you@melue.org"
-                placeholderTextColor={colors.mutedText}
+                placeholderTextColor="#9CA3AF"
                 autoCapitalize="none"
                 keyboardType="email-address"
                 value={email}
-                onChangeText={(t) => { setEmail(t); setError(''); }}
+                onChangeText={(t: string) => { setEmail(t); setError(''); }}
               />
             </View>
           </View>
 
           <View style={s.field}>
-            <Text style={typography.label}>Password</Text>
+            <Text style={s.fieldLabel}>Password</Text>
             <View style={s.inputRow}>
-              <Feather name="lock" size={16} color={colors.mutedText} />
+              <Feather name="lock" size={18} color="#9CA3AF" style={s.inputIcon} />
               <TextInput
                 style={s.input}
                 placeholder="Enter your password"
-                placeholderTextColor={colors.mutedText}
+                placeholderTextColor="#9CA3AF"
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -106,10 +100,8 @@ export default function LoginScreen() {
 
           <View style={s.rowBetween}>
             <TouchableOpacity style={s.rememberRow} onPress={() => setRemember((r) => !r)}>
-              <View style={[s.checkbox, remember && s.checkboxOn]}>
-                {remember ? <Feather name="check" size={12} color="#FFFFFF" /> : null}
-              </View>
-              <Text style={typography.small}>Remember this device</Text>
+              <View style={[s.checkbox, remember && s.checkboxOn]} />
+              <Text style={s.fieldLabel}>Remember this device</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
               <Text style={s.forgotLink}>Forgot Password?</Text>
@@ -117,33 +109,20 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity style={s.signInBtn} onPress={handleSignIn} activeOpacity={0.8}>
-            <Feather name="log-in" size={16} color={colors.navyText} />
             <Text style={s.signInText}>Sign In</Text>
           </TouchableOpacity>
 
           <View style={s.divider} />
 
-          <Text style={[typography.caption, { textAlign: 'center' }]}>Demo Accounts (any password)</Text>
-
-          {ALL_DEMO_ACCOUNTS.map((account) => {
-            const bc = ROLE_BADGE_COLORS[account.role] ?? { bg: '#F3F4F6', text: '#6B7280' };
-            return (
+          <Text style={s.demoLabel}>Demo Accounts (any password)</Text>
+          <View style={s.demoGrid}>
+            {ALL_DEMO_ACCOUNTS.map((account) => (
               <TouchableOpacity key={account.role} style={s.demoRow} onPress={() => handleDemoTap(account)} activeOpacity={0.6}>
-                <View style={s.demoLeft}>
-                  <View style={[s.demoAvatar, { backgroundColor: bc.bg }]}>
-                    <Text style={[s.demoAvatarText, { color: bc.text }]}>{account.label.charAt(0)}</Text>
-                  </View>
-                  <View>
-                    <Text style={typography.bodyBold}>{account.label}</Text>
-                    <Text style={typography.caption}>{account.email}</Text>
-                  </View>
-                </View>
-                <View style={[s.demoBadge, { backgroundColor: bc.bg }]}>
-                  <Text style={[s.demoBadgeText, { color: bc.text }]}>{account.role.replace(/_/g, ' ')}</Text>
-                </View>
+                <Text style={s.demoName}>{account.label}</Text>
+                <Text style={s.demoEmail}>{account.email}</Text>
               </TouchableOpacity>
-            );
-          })}
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -152,14 +131,13 @@ export default function LoginScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F0F4F8' },
-  scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, minHeight: '100%' as any },
+  scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
   card: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 400,
     backgroundColor: colors.bgCard,
-    borderRadius: radius.lg + 4,
+    borderRadius: radius.lg + 2,
     padding: spacing.xl + 4,
-    alignItems: 'center',
     gap: spacing.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -167,65 +145,59 @@ const s = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  logo: { width: 56, height: 56 },
-  brandName: { fontWeight: '800', fontSize: 14, color: colors.primaryYellow, letterSpacing: 0.5, marginBottom: spacing.xs },
+  logoWrap: { alignItems: 'center', marginBottom: spacing.sm },
+  logo: { width: 64, height: 64 },
   errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    width: '100%',
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
     borderRadius: radius.md,
     padding: spacing.md,
   },
-  errorText: { flex: 1, fontSize: 13, color: '#991B1B' },
-  field: { width: '100%', gap: spacing.xs },
+  errorText: { fontSize: 13, color: '#991B1B' },
+  field: { gap: spacing.xs },
+  fieldLabel: { fontSize: 13, fontWeight: '500', color: '#374151' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#D1D5DB',
     borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.bgInput,
+    backgroundColor: colors.white,
   },
-  input: { flex: 1, paddingVertical: spacing.md, fontSize: 14, color: colors.navyText },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
+  inputIcon: { position: 'absolute', left: 12 },
+  input: {
+    flex: 1,
+    paddingLeft: 40,
+    paddingRight: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: 14,
+    color: colors.navyText,
+  },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rememberRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  checkbox: { width: 18, height: 18, borderWidth: 1.5, borderColor: colors.border, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
-  checkboxOn: { backgroundColor: colors.navyText, borderColor: colors.navyText },
-  forgotLink: { color: colors.skyAccent, fontWeight: '600', fontSize: 13 },
+  checkbox: { width: 16, height: 16, borderWidth: 1.5, borderColor: '#D1D5DB', borderRadius: 4 },
+  checkboxOn: { backgroundColor: colors.skyAccent, borderColor: colors.skyAccent },
+  forgotLink: { fontSize: 13, fontWeight: '500', color: colors.skyAccent },
   signInBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    width: '100%',
     backgroundColor: colors.primaryYellow,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
-    marginTop: spacing.sm,
-  },
-  signInText: { fontWeight: '700', fontSize: 15, color: colors.navyText },
-  divider: { width: '100%', height: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
-  demoRow: {
-    width: '100%',
-    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  signInText: { fontSize: 14, fontWeight: '500', color: '#111827' },
+  divider: { height: 1, backgroundColor: '#E5E7EB', marginTop: spacing.sm },
+  demoLabel: { fontSize: 11, fontWeight: '600', color: '#4B5563', textAlign: 'center', marginBottom: spacing.xs },
+  demoGrid: { gap: 2 },
+  demoRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    paddingVertical: 6,
     paddingHorizontal: spacing.sm,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
   },
-  demoLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
-  demoAvatar: {
-    width: 32, height: 32, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  demoAvatarText: { fontSize: 13, fontWeight: '700' },
-  demoBadge: { borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  demoBadgeText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' as const, letterSpacing: 0.3 },
+  demoName: { fontSize: 12, fontWeight: '500', color: '#374151' },
+  demoEmail: { fontSize: 12, color: '#9CA3AF' },
 });

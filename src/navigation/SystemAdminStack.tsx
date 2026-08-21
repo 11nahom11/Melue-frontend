@@ -4,17 +4,12 @@ import type { SystemAdminStackParamList } from '../types';
 import StaffAccountManagementScreen from '../screens/systemadmin/StaffAccountManagementScreen';
 import RoleManagementScreen from '../screens/systemadmin/RoleManagementScreen';
 import PermissionConfigurationScreen from '../screens/systemadmin/PermissionConfigurationScreen';
-import AuditLogScreen from '../screens/systemadmin/AuditLogScreen';
 import FormBuilderScreen from '../screens/institutionaladmin/FormBuilderScreen';
 import TrialLoggingFormatScreen from '../screens/institutionaladmin/TrialLoggingFormatScreen';
 import AbcDropdownListsScreen from '../screens/institutionaladmin/AbcDropdownListsScreen';
 import ScheduleCapacityConfigScreen from '../screens/institutionaladmin/ScheduleCapacityConfigScreen';
 import GoalDomainDefinitionsScreen from '../screens/institutionaladmin/GoalDomainDefinitionsScreen';
 import TaskAnalysisTemplatesScreen from '../screens/institutionaladmin/TaskAnalysisTemplatesScreen';
-import ClinicalCategoriesConfigScreen from '../screens/institutionaladmin/ClinicalCategoriesConfigScreen';
-import ClinicInfoConfigScreen from '../screens/institutionaladmin/ClinicInfoConfigScreen';
-import WorkingHoursConfigScreen from '../screens/institutionaladmin/WorkingHoursConfigScreen';
-import SchoolSettingsConfigScreen from '../screens/institutionaladmin/SchoolSettingsConfigScreen';
 
 const Stack = createNativeStackNavigator<SystemAdminStackParamList>();
 
@@ -24,17 +19,12 @@ export default function SystemAdminStack() {
       <Stack.Screen name="StaffAccountManagement" component={StaffAccountManagementScreen} />
       <Stack.Screen name="RoleManagement" component={RoleManagementScreen} />
       <Stack.Screen name="PermissionConfiguration" component={PermissionConfigurationScreen} />
-      <Stack.Screen name="AuditLog" component={AuditLogScreen} />
       <Stack.Screen name="FormBuilder" component={FormBuilderScreen} />
       <Stack.Screen name="TrialLoggingFormat" component={TrialLoggingFormatScreen} />
       <Stack.Screen name="AbcDropdownLists" component={AbcDropdownListsScreen} />
       <Stack.Screen name="ScheduleCapacityConfig" component={ScheduleCapacityConfigScreen} />
       <Stack.Screen name="GoalDomainDefinitions" component={GoalDomainDefinitionsScreen} />
       <Stack.Screen name="TaskAnalysisTemplates" component={TaskAnalysisTemplatesScreen} />
-      <Stack.Screen name="ClinicalCategoriesConfig" component={ClinicalCategoriesConfigScreen} />
-      <Stack.Screen name="ClinicInfoConfig" component={ClinicInfoConfigScreen} />
-      <Stack.Screen name="WorkingHoursConfig" component={WorkingHoursConfigScreen} />
-      <Stack.Screen name="SchoolSettingsConfig" component={SchoolSettingsConfigScreen} />
     </Stack.Navigator>
   );
 }

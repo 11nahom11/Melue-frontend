@@ -12,7 +12,7 @@ import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import InstitutionalAdminNav, { IA_ROUTE_BY_TAB } from './components/InstitutionalAdminNav';
+import InstitutionalAdminNav from './components/InstitutionalAdminNav';
 import InstitutionalAdminSidebar from './components/InstitutionalAdminSidebar';
 import { getAbcLists, saveAbcList, resetAbcListsToDefault } from '../../api/institutionalAdminApi';
 import type { InstitutionalAdminStackParamList } from '../../types';
@@ -150,7 +150,7 @@ export default function AbcDropdownListsScreen({ navigation }: NativeStackScreen
 
   return (
     <SafeAreaView style={styles.safe}>
-      <InstitutionalAdminNav activeTab="ABC Lists" onTabPress={(t) => navigation?.navigate?.(IA_ROUTE_BY_TAB[t])} sectionTitle="ABC Dropdown Lists" />
+      <InstitutionalAdminNav sectionTitle="ABC Dropdown Lists" breadcrumb="Clinical Configuration / ABC Dropdown Lists" scrCode="SCR-ADMIN-003" />
       <View style={styles.body}>
         <InstitutionalAdminSidebar activeRoute="AbcDropdownLists" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="CLINICAL CONFIGURATION" />
         <View style={styles.contentArea}>

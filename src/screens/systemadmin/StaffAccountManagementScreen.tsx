@@ -7,7 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import StatusPill from '../../components/StatusPill';
-import SystemAdminNav, { SYS_ROUTE_BY_TAB } from './components/SystemAdminNav';
+import SystemAdminNav from './components/SystemAdminNav';
 import SystemAdminSidebar from './components/SystemAdminSidebar';
 import { getStaffAccounts, createStaffAccount, updateStaffAccount, deleteStaffAccount, resetStaffPassword, toggleStaffActive, bulkStaffAction } from '../../api/systemAdminApi';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -350,7 +350,7 @@ export default function StaffAccountManagementScreen({ navigation }: NativeStack
 
   return (
     <SafeAreaView style={styles.safe}>
-      <SystemAdminNav activeTab="Staff Accounts" onTabPress={(t) => navigation?.navigate?.(SYS_ROUTE_BY_TAB[t])} sectionTitle="Staff Account Management" />
+      <SystemAdminNav sectionTitle="Staff Account Management" breadcrumb="System Configuration / Staff Account Management" scrCode="SCR-SYS-001" />
       <View style={styles.body}>
         <SystemAdminSidebar activeRoute="StaffAccountManagement" onNavigate={(r) => navigation?.navigate?.(r)} sectionLabel="SYSTEM CONFIGURATION" />
         <View style={styles.contentArea}>
